@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Animated } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS } from '../utils';
@@ -9,6 +9,7 @@ const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
 const seedSowingIcon = require('../assets/seed.png');
 const dripIrrigationIcon = require('../assets/drip.png');
+const harvestIcon = require('../assets/harvest.png');
 
 const exploreIcons = [
   tractorIcon,
@@ -24,7 +25,38 @@ const exploreLabels = [
   'Drip Irrigation',
 ];
 
+const animatedPlaceholders = [
+  'tractor',
+  'seed sowing',
+  'ploughing',
+  'drip irrigation',
+];
+
 export default function HomeScreen() {
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fade out
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        // Change text
+        setPlaceholderIndex((prev) => (prev + 1) % animatedPlaceholders.length);
+        // Fade in
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [fadeAnim]);
+
   return (
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -42,33 +74,7 @@ export default function HomeScreen() {
           HYDERABAD
         </Text>
 
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={18} color={COLORS.TEXT.PLACEHOLDER} style={{ marginRight: 8 } } />
-          <TextInput
-            placeholder="Search for tractor"
-            placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
-            style={styles.searchInput}
-          />
-        </View>
-
-        {/* Mechanical Services Card */}
-        <View style={styles.cardGreenRow}>
-          <View style={{ flex: 1 }}>
-            <Text variant="h4" weight="bold" style={{ marginBottom: 2, fontFamily: 'Poppins-Regular',fontWeight: '700',fontSize: 18 }}>
-              Need mechanical services?
-            </Text>
-            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10,fontFamily: 'Poppins-Regular',fontWeight: '400',fontSize: 16 }}>
-              At your ease
-            </Text>
-            <TouchableOpacity style={styles.checkNowBtn}>
-              <Text weight="medium" color={COLORS.PRIMARY.MAIN}>Check Now {'>'}</Text>
-            </TouchableOpacity>
-          </View>
-          <Image source={tractorIcon} style={styles.cardImage} resizeMode="contain" />
-        </View>
-
-        {/* Explore More */}
+                {/* Explore More */}
         <Text variant="body" color={COLORS.TEXT.SECONDARY} style={styles.exploreLabel}>
           Explore 
         </Text>
@@ -76,11 +82,7 @@ export default function HomeScreen() {
           {exploreIcons.map((icon, idx) => (
             <View key={idx} style={styles.exploreItem}>
               <View style={styles.exploreIconWrap}>
-                {idx === 0 ? (
-                  <Image source={icon} style={styles.exploreIcon} resizeMode="contain" />
-                ) : (
-                  icon
-                )}
+              <Image source={icon} style={styles.exploreIcon} resizeMode="contain" />
               </View>
               <Text variant="label" align="center" style={styles.exploreText}>{exploreLabels[idx]}</Text>
             </View>
@@ -90,26 +92,51 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
 
-        {/* Become a Provider Card */}
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={COLORS.TEXT.PLACEHOLDER} style={{ marginRight: 8 }} />
+          <TextInput
+            placeholder=" "
+            placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
+            style={styles.searchInput}
+          />
+          <View style={{ position: 'absolute', left: 38, top: 10, flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.animatedPlaceholder}>Search for </Text>
+            <Animated.Text
+              style={[
+                styles.animatedPlaceholder,
+                { opacity: fadeAnim },
+              ]}
+              pointerEvents="none"
+            >
+              {animatedPlaceholders[placeholderIndex]}
+            </Animated.Text>
+          </View>
+        </View>
+
+        {/* Mechanical Services Card */}
         <View style={styles.cardGreenRow}>
           <View style={{ flex: 1 }}>
-            <Text variant="h4" weight="bold" style={{ marginBottom: 2 }}>
-              Become a provider
+            <Text variant="h4" weight="bold" style={{ marginBottom: 2, fontFamily: 'Poppins-Regular',fontWeight: '700',fontSize: 17 ,letterSpacing: 0.2}}>
+              Need mechanical services?
             </Text>
-            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10 }}>
-              get started
+            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10,fontFamily: 'Poppins-Regular',fontWeight: '400',fontSize: 14 }}>
+              At your ease
             </Text>
+            <TouchableOpacity style={styles.checkNowBtn}>
+              <Text weight="medium" color={COLORS.PRIMARY.MAIN}>Check Now {'>'}</Text>
+            </TouchableOpacity>
           </View>
-          <Ionicons name="person-add-outline" size={60} color={COLORS.PRIMARY.MAIN} style={styles.cardImage} />
+          <Image source={harvestIcon} style={styles.cardImage} resizeMode="contain" />
         </View>
 
         {/* Human Resources Card */}
         <View style={styles.cardWhiteRow}>
           <View style={{ flex: 1 }}>
-            <Text variant="h4" weight="bold" style={{ marginBottom: 2 }}>
+            <Text variant="h4" weight="bold" style={{ marginBottom: 2, fontFamily: 'Poppins-Regular',fontWeight: '700',fontSize: 17 ,letterSpacing: 0.2}}>
               Need human resources?
             </Text>
-            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10 }}>
+            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10,fontFamily: 'Poppins-Regular',fontWeight: '400',fontSize: 14 }}>
               find workers nearby
             </Text>
             <TouchableOpacity style={styles.checkNowBtn}>
@@ -188,8 +215,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardImage: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 100,
     marginLeft: 10,
   },
   checkNowBtn: {
@@ -222,8 +249,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   exploreIcon: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
   },
   exploreText: {
     fontSize: 13,
@@ -266,5 +293,11 @@ const styles = StyleSheet.create({
   },
   avatarIcon: {
     marginLeft: 8,
+  },
+  animatedPlaceholder: {
+    color: COLORS.TEXT.PLACEHOLDER,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
