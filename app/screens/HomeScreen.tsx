@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Animated, Platform } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS } from '../utils';
+import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import LocationService from '../services/locationService';
 
 const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
@@ -33,20 +35,31 @@ const animatedPlaceholders = [
 ];
 
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [currentLocation, setCurrentLocation] = useState('Loading...');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Get current location
+    const fetchLocation = async () => {
+      const location = await LocationService.getCurrentLocation();
+      if (location && location.city) {
+        setCurrentLocation(location.city.toUpperCase());
+      } else {
+        setCurrentLocation('LOCATION UNAVAILABLE');
+      }
+    };
+    fetchLocation();
+
+    // Animate placeholder text
     const interval = setInterval(() => {
-      // Fade out
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
-        // Change text
         setPlaceholderIndex((prev) => (prev + 1) % animatedPlaceholders.length);
-        // Fade in
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 250,
@@ -60,54 +73,62 @@ export default function HomeScreen() {
   return (
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Location */}
-        <View style={styles.locationRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text variant="label" color={COLORS.TEXT.SECONDARY} style={styles.locationLabel}>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <View style={styles.locationContainer}>
+            <Text variant="caption" color={COLORS.TEXT.SECONDARY} style={styles.locationLabel}>
               Location
             </Text>
-            <Ionicons name="location-outline" size={18} color={COLORS.TEXT.SECONDARY} />
+            <View style={styles.locationInfo}>
+              <Text variant="body" weight="bold" style={styles.locationCity}>
+                {currentLocation}
+              </Text>
+              <Ionicons name="location-outline" size={16} color={COLORS.TEXT.SECONDARY} style={styles.locationIcon} />
+            </View>
           </View>
-          <Ionicons name="person-outline" size={36} color={COLORS.PRIMARY.MAIN} style={styles.avatarIcon} />
+          <TouchableOpacity 
+            style={styles.profileButton} 
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Ionicons name="person-circle" size={40} color={COLORS.PRIMARY.MAIN} />
+          </TouchableOpacity>
         </View>
-        <Text variant="label" weight="bold" style={styles.locationCity}>
-          HYDERABAD
-        </Text>
 
-                {/* Explore More */}
-        <Text variant="body" color={COLORS.TEXT.SECONDARY} style={styles.exploreLabel}>
-          Explore 
+        {/* Explore More */}
+        <Text variant="body" weight="semibold" color={COLORS.TEXT.SECONDARY} style={styles.exploreLabel}>
+          Explore
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exploreScroll}>
           {exploreIcons.map((icon, idx) => (
             <View key={idx} style={styles.exploreItem}>
               <View style={styles.exploreIconWrap}>
-              <Image source={icon} style={styles.exploreIcon} resizeMode="contain" />
+                <Image source={icon} style={styles.exploreIcon} resizeMode="contain" />
               </View>
-              <Text variant="label" align="center" style={styles.exploreText}>{exploreLabels[idx]}</Text>
+              <Text variant="caption" align="center" style={styles.exploreText}>
+                {exploreLabels[idx]}
+              </Text>
             </View>
           ))}
-          <View style={styles.exploreMoreBtn}>
+          <TouchableOpacity style={styles.exploreMoreBtn}>
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT.SECONDARY} />
-          </View>
+          </TouchableOpacity>
         </ScrollView>
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={COLORS.TEXT.PLACEHOLDER} style={{ marginRight: 8 }} />
+          <Ionicons name="search" size={20} color={COLORS.TEXT.PLACEHOLDER} style={styles.searchIcon} />
           <TextInput
             placeholder=" "
             placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
             style={styles.searchInput}
           />
-          <View style={{ position: 'absolute', left: 38, top: 10, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={styles.animatedPlaceholderContainer}>
             <Text style={styles.animatedPlaceholder}>Search for </Text>
             <Animated.Text
               style={[
                 styles.animatedPlaceholder,
                 { opacity: fadeAnim },
               ]}
-              pointerEvents="none"
             >
               {animatedPlaceholders[placeholderIndex]}
             </Animated.Text>
@@ -115,189 +136,196 @@ export default function HomeScreen() {
         </View>
 
         {/* Mechanical Services Card */}
-        <View style={styles.cardGreenRow}>
-          <View style={{ flex: 1 }}>
-            <Text variant="h4" weight="bold" style={{ marginBottom: 2, fontFamily: 'Poppins-Regular',fontWeight: '700',fontSize: 17 ,letterSpacing: 0.2}}>
+        <TouchableOpacity style={styles.cardGreenRow} activeOpacity={0.8}>
+          <View style={styles.cardContent}>
+            <Text variant="h4" weight="bold" style={styles.cardTitle}>
               Need mechanical services?
             </Text>
-            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10,fontFamily: 'Poppins-Regular',fontWeight: '400',fontSize: 14 }}>
+            <Text variant="body" color={COLORS.PRIMARY.MAIN} style={styles.cardSubtitle}>
               At your ease
             </Text>
-            <TouchableOpacity style={styles.checkNowBtn}>
-              <Text weight="medium" color={COLORS.PRIMARY.MAIN}>Check Now {'>'}</Text>
-            </TouchableOpacity>
+            <View style={styles.checkNowBtn}>
+              <Text variant="body" weight="semibold" color={COLORS.PRIMARY.MAIN}>
+                Check Now
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.PRIMARY.MAIN} style={{ marginLeft: 4 }} />
+            </View>
           </View>
           <Image source={harvestIcon} style={styles.cardImage} resizeMode="contain" />
-        </View>
+        </TouchableOpacity>
 
         {/* Human Resources Card */}
-        <View style={styles.cardWhiteRow}>
-          <View style={{ flex: 1 }}>
-            <Text variant="h4" weight="bold" style={{ marginBottom: 2, fontFamily: 'Poppins-Regular',fontWeight: '700',fontSize: 17 ,letterSpacing: 0.2}}>
+        <TouchableOpacity style={styles.cardWhiteRow} activeOpacity={0.8}>
+          <View style={styles.cardContent}>
+            <Text variant="h4" weight="bold" style={styles.cardTitle}>
               Need human resources?
             </Text>
-            <Text color={COLORS.PRIMARY.MAIN} style={{ marginBottom: 10,fontFamily: 'Poppins-Regular',fontWeight: '400',fontSize: 14 }}>
-              find workers nearby
+            <Text variant="body" color={COLORS.PRIMARY.MAIN} style={styles.cardSubtitle}>
+              Find workers nearby
             </Text>
-            <TouchableOpacity style={styles.checkNowBtn}>
-              <Text weight="medium" color={COLORS.PRIMARY.MAIN}>Check Now {'>'}</Text>
-            </TouchableOpacity>
+            <View style={styles.checkNowBtn}>
+              <Text variant="body" weight="semibold" color={COLORS.PRIMARY.MAIN}>
+                Check Now
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.PRIMARY.MAIN} style={{ marginLeft: 4 }} />
+            </View>
           </View>
-          <Ionicons name="man-outline" size={60} color={COLORS.PRIMARY.MAIN} style={styles.cardImage} />
-        </View>
+          <Ionicons name="people-outline" size={80} color={COLORS.PRIMARY.MAIN} style={styles.cardIconLarge} />
+        </TouchableOpacity>
       </ScrollView>
-
-     
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: 15,
+    padding: SPACING.MD,
     paddingBottom: 100,
   },
-  locationRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
+    marginBottom: SPACING.LG,
+  },
+  locationContainer: {
+    flex: 1,
   },
   locationLabel: {
-    fontSize: 12,
-    marginRight: 4,
+    marginBottom: 2,
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   locationCity: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 18,
+    fontSize: 16,
+  },
+  locationIcon: {
+    marginLeft: 4,
+  },
+  profileButton: {
+    padding: SPACING.XS,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 18,
+    borderRadius: BORDER_RADIUS.MD,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM + 2,
+    marginBottom: SPACING.LG,
+    ...SHADOWS.SM,
+  },
+  searchIcon: {
+    marginRight: SPACING.SM,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.TEXT.PRIMARY,
-    fontFamily: 'Poppins-Regular',
-    fontWeight: '600',
+    fontFamily: FONTS.POPPINS.MEDIUM,
+    padding: 0,
+    margin: 0,
+  },
+  animatedPlaceholderContainer: {
+    position: 'absolute',
+    left: SPACING.MD + 28,
+    top: Platform.OS === 'ios' ? 11 : 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  animatedPlaceholder: {
+    color: COLORS.TEXT.PLACEHOLDER,
+    fontFamily: FONTS.POPPINS.MEDIUM,
+    fontSize: 15,
   },
   cardGreenRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.BACKGROUND.HIGHLIGHT,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 18,
-    shadowColor: COLORS.SHADOW.PRIMARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: BORDER_RADIUS.LG,
+    padding: SPACING.LG,
+    marginBottom: SPACING.MD,
+    ...SHADOWS.MD,
   },
   cardWhiteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 18,
-    shadowColor: COLORS.SHADOW.PRIMARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: BORDER_RADIUS.LG,
+    padding: SPACING.LG,
+    marginBottom: SPACING.MD,
+    ...SHADOWS.MD,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardTitle: {
+
+    fontFamily: FONTS.POPPINS.REGULAR,
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.TEXT.PRIMARY,
+  },
+  cardSubtitle: {
+    marginBottom: SPACING.SM,
+    fontWeight: '500',
   },
   cardImage: {
     width: 90,
     height: 100,
-    marginLeft: 10,
+  
+  },
+  cardIconLarge: {
+    marginLeft: SPACING.SM,
   },
   checkNowBtn: {
     backgroundColor: COLORS.SECONDARY.LIGHT,
-    fontFamily: 'Poppins-Regular',
-    fontWeight: '600',
-    fontSize: 14,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.SM,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM,
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   exploreLabel: {
-    marginBottom: 10,
-    marginTop: 2,
+    marginBottom: SPACING.SM,
+    marginTop: SPACING.XS,
+    fontFamily: FONTS.POPPINS.BOLD,
+    fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Poppins-Regular',
+    color: COLORS.TEXT.PLACEHOLDER,
   },
   exploreScroll: {
-    marginBottom: 18,
+    marginBottom: SPACING.LG,
   },
   exploreItem: {
     alignItems: 'center',
-    marginRight: 18,
+    marginRight: SPACING.MD,
   },
   exploreIconWrap: {
     backgroundColor: COLORS.BACKGROUND.HIGHLIGHT,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 4,
+    borderRadius: BORDER_RADIUS.MD,
+    padding: SPACING.MD,
+    marginBottom: SPACING.XS,
   },
   exploreIcon: {
     width: 40,
     height: 40,
   },
   exploreText: {
-    fontSize: 13,
     marginTop: 2,
   },
   exploreMoreBtn: {
     backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: BORDER_RADIUS.FULL,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: COLORS.BACKGROUND.NAV,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingVertical: 10,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    shadowColor: COLORS.SHADOW.PRIMARY,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  navItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  navItemActive: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarIcon: {
-    marginLeft: 8,
-  },
-  animatedPlaceholder: {
-    color: COLORS.TEXT.PLACEHOLDER,
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    fontWeight: '600',
+    marginTop: 15,
+    ...SHADOWS.SM,
   },
 });
