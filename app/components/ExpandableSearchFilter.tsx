@@ -52,8 +52,8 @@ export default function ExpandableSearchFilter() {
         <View style={styles.content}>
           <DateRangeCalendar 
             onConfirm={handleConfirmDate} 
-            initialStartDate={startDate}
-            initialEndDate={endDate}
+            initialStartDate={startDate || undefined}
+            initialEndDate={endDate || undefined}
           />
           <TouchableOpacity style={styles.immediateButton} onPress={handleClearDate}>
             <Text color={COLORS.TEXT.SECONDARY}>Set to Immediate</Text>
