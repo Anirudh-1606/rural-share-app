@@ -13,6 +13,8 @@ import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 type ProfileSectionItem = {
   icon: string;
@@ -32,6 +34,8 @@ const ProfileScreen = () => {
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  const { user } = useSelector((state: RootState) => state.auth);
+
   const handleTabPreferenceChange = async (tab: 'seeker' | 'provider') => {
     setDefaultTab(tab);
     await AsyncStorage.setItem('defaultTab', tab);
@@ -42,8 +46,8 @@ const ProfileScreen = () => {
       title: 'Account Settings',
       items: [
         { icon: 'person-outline', label: 'Edit Profile', onPress: () => {} },
-        { icon: 'call-outline', label: 'Phone Number', value: '+91 98765 43210' },
-        { icon: 'mail-outline', label: 'Email', value: 'user@example.com' },
+        { icon: 'call-outline', label: 'Phone Number', value: user?.phone || 'N/A' },
+        { icon: 'mail-outline', label: 'Email', value: user?.email || 'N/A' },
         { icon: 'location-outline', label: 'Address', onPress: () => {} },
       ],
     },
@@ -88,10 +92,10 @@ const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
           <Text variant="h3" weight="bold" align="center" style={styles.userName}>
-            John Doe
+            {user?.name || 'John Doe'}
           </Text>
           <Text variant="body" color={COLORS.TEXT.SECONDARY} align="center">
-            Rural Service Provider
+            {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Rural Service Provider'}
           </Text>
         </View>
 

@@ -38,13 +38,21 @@ class LocationService {
       Geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
+          console.log('LocationService: Geolocation.getCurrentPosition success:', { latitude, longitude });
           
           // Get city name from coordinates using reverse geocoding
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
             );
-            const data = await response.json();
+            const responseText = await response.text();
+            try {
+              const data = JSON.parse(responseText);
+              console.log('LocationService: Reverse geocoding success:', data);
+            } catch (jsonError) {
+              console.error('LocationService: JSON parsing failed, raw response:', responseText);
+              throw jsonError;
+            }
             
             resolve({
               latitude,
@@ -54,11 +62,15 @@ class LocationService {
               country: data.address?.country || '',
             });
           } catch (error) {
+            console.error('LocationService: Reverse geocoding failed:', error);
             // If geocoding fails, still return coordinates
             resolve({ latitude, longitude });
           }
         },
-        (error) => reject(error),
+        (error) => {
+          console.error('LocationService: Geolocation.getCurrentPosition error:', error);
+          reject(error);
+        },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
       );
     });
@@ -68,14 +80,16 @@ class LocationService {
     try {
       const hasPermission = await this.requestLocationPermission();
       if (!hasPermission) {
-        console.log('Location permission denied');
+        console.log('LocationService: Location permission denied');
         return null;
       }
 
+      console.log('LocationService: Location permission granted, attempting to get current position...');
       const location = await this.getCurrentPosition();
+      console.log('LocationService: Successfully retrieved location:', location);
       return location;
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('LocationService: Error getting location:', error);
       return null;
     }
   }
