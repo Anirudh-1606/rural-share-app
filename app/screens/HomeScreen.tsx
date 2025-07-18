@@ -6,6 +6,7 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
+import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
 
 const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
@@ -113,6 +114,9 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT.SECONDARY} />
           </TouchableOpacity>
         </ScrollView>
+
+        {/* Date Range Selector */}
+        <ExpandableSearchFilter />
 
         {/* Search Bar */}
         <View style={styles.searchBar}>

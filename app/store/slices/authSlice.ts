@@ -1,4 +1,5 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../config/api';
 
 // Types for authentication state
@@ -45,7 +46,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   
-  isLoading: false,
+  isLoading: true, // Start with loading true to check auth
   isSigningIn: false,
   isSigningUp: false,
   isVerifyingOTP: false,
@@ -60,6 +61,17 @@ const initialState: AuthState = {
   
   currentScreen: 'signIn',
 };
+
+// Async action to check auth status from storage
+export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
+  const token = await AsyncStorage.getItem('token');
+  const userJson = await AsyncStorage.getItem('user');
+  if (token && userJson) {
+    const user = JSON.parse(userJson);
+    return { token, user };
+  }
+  return null;
+});
 
 // Async action for user registration
 export const signUp = createAsyncThunk(
@@ -123,6 +135,11 @@ export const signIn = createAsyncThunk(
       
       const result = await response.json();
       console.log('✅ Login successful:', result);
+      
+      // Persist auth state
+      await AsyncStorage.setItem('token', result.access_token);
+      await AsyncStorage.setItem('user', JSON.stringify(result.user));
+      
       return result;
     } catch (error) {
       console.error('🔥 Network error during login:', error);
@@ -253,6 +270,11 @@ export const otpLogin = createAsyncThunk(
       }
       const data = await response.json();
       console.log('✅ OTP login success:', data);
+      
+      // Persist auth state
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      
       return data; // expects { token, user }
     } catch (error) {
       console.error('❌ OTP login error:', error);
@@ -300,6 +322,8 @@ const authSlice = createSlice({
       state.pendingUserId = null;
       state.currentScreen = 'signIn';
       state.error = null;
+      AsyncStorage.removeItem('token');
+      AsyncStorage.removeItem('user');
     },
     
     // Reset all loading states
@@ -313,6 +337,24 @@ const authSlice = createSlice({
   },
   
   extraReducers: (builder) => {
+    // Check Auth reducers
+    builder
+      .addCase(checkAuth.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.isAuthenticated = true;
+          state.token = action.payload.token;
+          state.user = action.payload.user;
+          state.currentScreen = 'authenticated';
+        }
+        state.isLoading = false;
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.isLoading = false;
+      });
+
     // Sign Up reducers
     builder
       .addCase(signUp.pending, (state) => {
