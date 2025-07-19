@@ -118,7 +118,10 @@ const ProviderScreen = () => {
           </Text>
           <View style={styles.quickActionsContainer}>
             <View style={styles.quickActionsGrid}>
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity 
+                style={styles.quickActionItem}
+                onPress={() => navigation.navigate('CreateListing')}
+              >
                 <View style={styles.quickActionIconWrapper}>
                   <Ionicons name="add-circle-outline" size={35} color={COLORS.PRIMARY.MAIN} />
                 </View>
