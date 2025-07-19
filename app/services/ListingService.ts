@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'YOUR_API_BASE_URL'; // Replace with actual base URL
+const BASE_URL = 'http://localhost:3000/api'; // Replace with actual base URL
 
 export interface CreateListingPayload {
   providerId: string;
