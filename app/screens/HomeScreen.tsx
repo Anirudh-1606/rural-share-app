@@ -1,5 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Animated, Platform } from 'react-native';
+import { 
+  View, 
+  StyleSheet, 
+  TextInput, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  Animated, 
+  Platform,
+  Dimensions 
+} from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../utils';
@@ -7,24 +17,20 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
 const seedSowingIcon = require('../assets/seed.png');
 const dripIrrigationIcon = require('../assets/drip.png');
 const harvestIcon = require('../assets/harvest.png');
+const backgroundImg = require('../assets/provider-bg.png');
 
-const exploreIcons = [
-  tractorIcon,
-  ploughingIcon,
-  seedSowingIcon,
-  dripIrrigationIcon,
-];
-
-const exploreLabels = [
-  'Tractor',
-  'Ploughing',
-  'Seed Sowing',
-  'Drip Irrigation',
+const exploreItems = [
+  { icon: tractorIcon, label: 'Tractor' },
+  { icon: ploughingIcon, label: 'Ploughing' },
+  { icon: seedSowingIcon, label: 'Seed Sowing' },
+  { icon: dripIrrigationIcon, label: 'Drip Irrigation' },
 ];
 
 const animatedPlaceholders = [
@@ -36,9 +42,11 @@ const animatedPlaceholders = [
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [currentLocation, setCurrentLocation] = useState('Loading...');
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [searchText, setSearchText] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const placeholderAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Get current location
@@ -52,126 +60,160 @@ export default function HomeScreen() {
     };
     fetchLocation();
 
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
     // Animate placeholder text
     const interval = setInterval(() => {
-      Animated.timing(fadeAnim, {
+      Animated.timing(placeholderAnim, {
         toValue: 0,
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
         setPlaceholderIndex((prev) => (prev + 1) % animatedPlaceholders.length);
-        Animated.timing(fadeAnim, {
+        Animated.timing(placeholderAnim, {
           toValue: 1,
           duration: 250,
           useNativeDriver: true,
         }).start();
       });
     }, 2000);
+
     return () => clearInterval(interval);
-  }, [fadeAnim]);
+  }, [fadeAnim, placeholderAnim]);
 
   return (
-    <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header Row */}
-        <View style={styles.headerRow}>
-          <View style={styles.locationContainer}>
-            <Text variant="caption" color={COLORS.TEXT.SECONDARY} style={styles.locationLabel}>
-              Location
-            </Text>
-            <View style={styles.locationInfo}>
-              <Text variant="body" weight="bold" style={styles.locationCity}>
-                {currentLocation}
-              </Text>
-              <Ionicons name="location-outline" size={16} color={COLORS.TEXT.SECONDARY} style={styles.locationIcon} />
-            </View>
+    <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
+      {/* Background Image */}
+      <Image 
+        source={backgroundImg} 
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        {/* Header Section */}
+        <View style={styles.headerContainer}>
+          <View style={styles.headerBackground}>
+            <View style={styles.headerCircle1} />
+            <View style={styles.headerCircle2} />
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton} 
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Ionicons name="person-circle" size={40} color={COLORS.PRIMARY.MAIN} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Explore More */}
-        <Text variant="body" weight="semibold" color={COLORS.TEXT.SECONDARY} style={styles.exploreLabel}>
-          Explore
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exploreScroll}>
-          {exploreIcons.map((icon, idx) => (
-            <View key={idx} style={styles.exploreItem}>
-              <View style={styles.exploreIconWrap}>
-                <Image source={icon} style={styles.exploreIcon} resizeMode="contain" />
+          
+          <View style={styles.headerContent}>
+            {/* Location and Profile Row */}
+            <View style={styles.headerTop}>
+              <View style={styles.locationWrapper}>
+                <Text style={styles.locationLabel}>Location</Text>
+                <View style={styles.locationInfo}>
+                  <Text style={styles.locationText}>{currentLocation}</Text>
+                  <Ionicons name="location" size={16} color="white" style={styles.locationIcon} />
+                </View>
               </View>
-              <Text variant="caption" align="center" style={styles.exploreText}>
-                {exploreLabels[idx]}
-              </Text>
+              <TouchableOpacity 
+                style={styles.profileButton}
+                onPress={() => navigation.navigate('Profile')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="person" size={24} color={COLORS.PRIMARY.MAIN} />
+              </TouchableOpacity>
             </View>
-          ))}
-          <TouchableOpacity style={styles.exploreMoreBtn}>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT.SECONDARY} />
-          </TouchableOpacity>
-        </ScrollView>
+          </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={COLORS.TEXT.PLACEHOLDER} style={styles.searchIcon} />
-          <TextInput
-            placeholder=" "
-            placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
-            style={styles.searchInput}
-          />
-          <View style={styles.animatedPlaceholderContainer}>
-            <Text style={styles.animatedPlaceholder}>Search for </Text>
-            <Animated.Text
-              style={[
-                styles.animatedPlaceholder,
-                { opacity: fadeAnim },
-              ]}
-            >
-              {animatedPlaceholders[placeholderIndex]}
-            </Animated.Text>
+          {/* Floating Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color="#94a3b8" />
+              <TextInput
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder=" "
+                placeholderTextColor="#94a3b8"
+                style={styles.searchInput}
+              />
+              {!searchText && (
+                <View style={styles.animatedPlaceholderContainer}>
+                  <Text style={styles.animatedPlaceholder}>Search for </Text>
+                  <Animated.Text
+                    style={[
+                      styles.animatedPlaceholder,
+                      { opacity: placeholderAnim },
+                    ]}
+                  >
+                    {animatedPlaceholders[placeholderIndex]}
+                  </Animated.Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
-        {/* Mechanical Services Card */}
-        <TouchableOpacity style={styles.cardGreenRow} activeOpacity={0.8}>
-          <View style={styles.cardContent}>
-            <Text variant="h4" weight="bold" style={styles.cardTitle}>
-              Need mechanical services?
-            </Text>
-            <Text variant="body" color={COLORS.PRIMARY.MAIN} style={styles.cardSubtitle}>
-              At your ease
-            </Text>
-            <View style={styles.checkNowBtn}>
-              <Text variant="body" weight="semibold" color={COLORS.PRIMARY.MAIN}>
-                Check Now
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={COLORS.PRIMARY.MAIN} style={{ marginLeft: 4 }} />
-            </View>
-          </View>
-          <Image source={harvestIcon} style={styles.cardImage} resizeMode="contain" />
-        </TouchableOpacity>
+        {/* Services Section */}
+        <Animated.View style={[styles.servicesSection, { opacity: fadeAnim }]}>
+          <Text style={styles.sectionTitle}>Explore Services</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.servicesScrollContent}
+          >
+            {exploreItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.serviceCard}
+                activeOpacity={0.7}
+                onPress={() => {}}
+              >
+                <View style={styles.serviceIconWrapper}>
+                  <Image source={item.icon} style={styles.serviceIcon} resizeMode="contain" />
+                </View>
+                <Text style={styles.serviceLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </Animated.View>
 
-        {/* Human Resources Card */}
-        <TouchableOpacity style={styles.cardWhiteRow} activeOpacity={0.8}>
-          <View style={styles.cardContent}>
-            <Text variant="h4" weight="bold" style={styles.cardTitle}>
-              Need human resources?
-            </Text>
-            <Text variant="body" color={COLORS.PRIMARY.MAIN} style={styles.cardSubtitle}>
-              Find workers nearby
-            </Text>
-            <View style={styles.checkNowBtn}>
-              <Text variant="body" weight="semibold" color={COLORS.PRIMARY.MAIN}>
-                Check Now
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={COLORS.PRIMARY.MAIN} style={{ marginLeft: 4 }} />
+        {/* CTA Cards */}
+        <View style={styles.ctaSection}>
+          {/* Mechanical Services Card */}
+          <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
+            <View style={styles.ctaContent}>
+              <Text style={styles.ctaTitle}>Need mechanical services?</Text>
+              <Text style={styles.ctaSubtitle}>At your ease</Text>
+              <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
+                <Text style={styles.ctaButtonText}>Check Now</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
+              </TouchableOpacity>
             </View>
-          </View>
-          <Ionicons name="people-outline" size={80} color={COLORS.PRIMARY.MAIN} style={styles.cardIconLarge} />
-        </TouchableOpacity>
+            <View style={styles.ctaImageWrapper}>
+              <Image source={harvestIcon} style={styles.ctaImage} resizeMode="contain" />
+            </View>
+          </TouchableOpacity>
+
+          {/* Human Resources Card */}
+          <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
+            <View style={styles.ctaContent}>
+              <Text style={styles.ctaTitle}>Need human resources?</Text>
+              <Text style={styles.ctaSubtitle}>Find workers nearby</Text>
+              <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
+                <Text style={styles.ctaButtonText}>Check Now</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.ctaIconWrapper}>
+              <Ionicons name="people" size={60} color={COLORS.PRIMARY.MAIN} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom Padding */}
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaWrapper>
   );
@@ -179,153 +221,240 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: SPACING.MD,
-    paddingBottom: 100,
+    flexGrow: 1,
+    backgroundColor: 'transparent',
   },
-  headerRow: {
+  backgroundImage: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: 400,
+    opacity: 0.3,
+  },
+  // Header Styles
+  headerContainer: {
+    height: 200,
+    position: 'relative',
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    backgroundColor: COLORS.PRIMARY.MAIN,
+    overflow: 'hidden',
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+  },
+  headerCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -30,
+    width: 200,
+    height: 200,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 100,
+  },
+  headerCircle2: {
+    position: 'absolute',
+    bottom: -100,
+    left: -60,
+    width: 250,
+    height: 250,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 125,
+  },
+  headerContent: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+  },
+  headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING.LG,
+    alignItems: 'center',
   },
-  locationContainer: {
+  locationWrapper: {
     flex: 1,
   },
   locationLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+    fontFamily: FONTS.POPPINS.REGULAR,
     marginBottom: 2,
   },
   locationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  locationCity: {
+  locationText: {
     fontSize: 16,
+    color: 'white',
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
   },
   locationIcon: {
-    marginLeft: 4,
+    marginLeft: 6,
   },
   profileButton: {
-    padding: SPACING.XS,
+    width: 48,
+    height: 48,
+    backgroundColor: 'white',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.MD,
+  },
+  // Search Bar Styles
+  searchContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: -28,
+    zIndex: 10,
   },
   searchBar: {
+    backgroundColor: 'white',
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: BORDER_RADIUS.MD,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM + 2,
-    marginBottom: SPACING.LG,
-    ...SHADOWS.SM,
-  },
-  searchIcon: {
-    marginRight: SPACING.SM,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+    ...SHADOWS.LG,
+    position: 'relative',
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
+    fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.PRIMARY,
-    fontFamily: FONTS.POPPINS.MEDIUM,
     padding: 0,
-    margin: 0,
   },
   animatedPlaceholderContainer: {
     position: 'absolute',
-    left: SPACING.MD + 28,
-    top: Platform.OS === 'ios' ? 11 : 10,
+    left: 52,
+    top: Platform.OS === 'ios' ? 16 : 15,
     flexDirection: 'row',
     alignItems: 'center',
     pointerEvents: 'none',
   },
   animatedPlaceholder: {
-    color: COLORS.TEXT.PLACEHOLDER,
-    fontFamily: FONTS.POPPINS.MEDIUM,
+    color: '#94a3b8',
+    fontFamily: FONTS.POPPINS.REGULAR,
     fontSize: 15,
   },
-  cardGreenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.BACKGROUND.HIGHLIGHT,
-    borderRadius: BORDER_RADIUS.LG,
-    padding: SPACING.LG,
-    marginBottom: SPACING.MD,
-    ...SHADOWS.MD,
+  // Services Section
+  servicesSection: {
+    paddingLeft: 20,
+    marginTop: 60,
   },
-  cardWhiteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: BORDER_RADIUS.LG,
-    padding: SPACING.LG,
-    marginBottom: SPACING.MD,
-    ...SHADOWS.MD,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitle: {
-
-    fontFamily: FONTS.POPPINS.REGULAR,
-    fontSize: 17,
-    fontWeight: '600',
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
+    marginBottom: 16,
   },
-  cardSubtitle: {
-    marginBottom: SPACING.SM,
-    fontWeight: '500',
+  servicesScrollContent: {
+    paddingRight: 20,
   },
-  cardImage: {
-    width: 90,
-    height: 100,
-  
+  serviceCard: {
+    alignItems: 'center',
+    marginRight: 20,
   },
-  cardIconLarge: {
-    marginLeft: SPACING.SM,
+  serviceIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  checkNowBtn: {
-    backgroundColor: COLORS.SECONDARY.LIGHT,
-    borderRadius: BORDER_RADIUS.SM,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
-    alignSelf: 'flex-start',
+  serviceIcon: {
+    width: 40,
+    height: 40,
+  },
+  serviceLabel: {
+    fontSize: 12,
+    fontFamily: FONTS.POPPINS.MEDIUM,
+    color: '#475569',
+    textAlign: 'center',
+  },
+  // CTA Section
+  ctaSection: {
+    paddingHorizontal: 20,
+    marginTop: 32,
+    gap: 16,
+  },
+  ctaCard: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 24,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
+    ...SHADOWS.MD,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  exploreLabel: {
-    marginBottom: SPACING.SM,
-    marginTop: SPACING.XS,
+  ctaContent: {
+    flex: 1,
+    zIndex: 2,
+  },
+  ctaTitle: {
+    fontSize: 18,
     fontFamily: FONTS.POPPINS.BOLD,
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.TEXT.PLACEHOLDER,
+    color: COLORS.TEXT.PRIMARY,
+    marginBottom: 4,
+    lineHeight: 26,
   },
-  exploreScroll: {
-    marginBottom: SPACING.LG,
+  ctaSubtitle: {
+    fontSize: 14,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: '#64748b',
+    marginBottom: 12,
   },
-  exploreItem: {
+  ctaButton: {
+    backgroundColor: COLORS.SECONDARY.LIGHT,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: SPACING.MD,
+    alignSelf: 'flex-start',
+    gap: 6,
   },
-  exploreIconWrap: {
-    backgroundColor: COLORS.BACKGROUND.HIGHLIGHT,
-    borderRadius: BORDER_RADIUS.MD,
-    padding: SPACING.MD,
-    marginBottom: SPACING.XS,
+  ctaButtonText: {
+    fontSize: 13,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.PRIMARY.MAIN,
   },
-  exploreIcon: {
-    width: 40,
-    height: 40,
+  ctaImageWrapper: {
+    position: 'relative',
+    zIndex: 2,
   },
-  exploreText: {
-    marginTop: 2,
+  ctaImage: {
+    width: 100,
+    height: 100,
   },
-  exploreMoreBtn: {
-    backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: BORDER_RADIUS.FULL,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
+  ctaIconWrapper: {
+    width: 80,
+    height: 80,
     justifyContent: 'center',
-    marginTop: 15,
-    ...SHADOWS.SM,
+    alignItems: 'center',
+    backgroundColor: COLORS.SECONDARY.LIGHT,
+    borderRadius: 20,
+  },
+  // Decorative background for CTA
+  ctaDecoration: {
+    position: 'absolute',
+    top: -50,
+    right: -30,
+    width: 200,
+    height: 200,
+    backgroundColor: 'rgba(45, 122, 78, 0.05)',
+    borderRadius: 100,
   },
 });

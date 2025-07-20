@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BottomTabNavigator from './BottomTabNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 import CreateListingScreen from '../screens/CreateListingScreen';
+import MyListingsScreen from '../screens/MyListingsScreen';
+import ListingDetailScreen from '../screens/ListingDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +26,20 @@ export default function RootNavigator() {
           component={CreateListingScreen}
           options={{
             animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen 
+          name="MyListings" 
+          component={MyListingsScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ListingDetail" 
+          component={ListingDetailScreen}
+          options={{
+            animation: 'slide_from_right',
           }}
         />
       </Stack.Navigator>

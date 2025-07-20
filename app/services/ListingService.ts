@@ -58,7 +58,16 @@ class ListingService {
     }
   }
 
-  // Update a listing
+  // Get listing by ID
+  async getListingById(listingId: string): Promise<any> {
+    try {
+      const response = await axios.get(`${BASE_URL}/listings/${listingId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching listing by ID:', error);
+      throw error;
+    }
+  }
   async updateListing(listingId: string, payload: Partial<CreateListingPayload>): Promise<Listing> {
     try {
       const response = await axios.put(`${BASE_URL}/listings/${listingId}`, payload);
