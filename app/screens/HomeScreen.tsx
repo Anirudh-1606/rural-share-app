@@ -231,11 +231,11 @@ const styles = StyleSheet.create({
     right: 0,
     width: '100%',
     height: 400,
-    opacity: 0.3,
+    opacity: 0.5,
   },
   // Header Styles
   headerContainer: {
-    height: 200,
+    height: 170,
     position: 'relative',
   },
   headerBackground: {
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingTop: Platform.OS === 'ios' ? 20 : 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -367,14 +367,14 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#FFC06E',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   serviceIcon: {
-    width: 40,
-    height: 40,
+    width: 45,
+    height: 45,
   },
   serviceLabel: {
     fontSize: 12,

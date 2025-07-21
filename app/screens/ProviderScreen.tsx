@@ -148,7 +148,7 @@ const ProviderScreen = () => {
                 <Text style={styles.quickActionLabel}>My Listings</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity style={styles.quickActionItem}  onPress={() => navigation.navigate('ProviderBookings')}>
                 <View style={styles.quickActionIconWrapper}>
                   <Ionicons name="calendar-outline" size={33} color={COLORS.PRIMARY.MAIN} />
                 </View>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: '100%',
     height: 400, // Increased height
-    opacity: 0.3, // Reduced opacity for subtlety
+    opacity: 0.5, // Reduced opacity for subtlety
   },
   headerContainer: {
     height: 190,

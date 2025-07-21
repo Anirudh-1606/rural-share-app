@@ -6,6 +6,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import CreateListingScreen from '../screens/CreateListingScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
 import ListingDetailScreen from '../screens/ListingDetailScreen';
+import ProviderBookingsScreen from '../screens/ProviderBookingsScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +40,20 @@ export default function RootNavigator() {
         <Stack.Screen 
           name="ListingDetail" 
           component={ListingDetailScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ProviderBookings" 
+          component={ProviderBookingsScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="OrderDetail" 
+          component={OrderDetailScreen}
           options={{
             animation: 'slide_from_right',
           }}
