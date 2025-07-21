@@ -1,28 +1,21 @@
 import React from 'react';
-import {useSelector} from 'react-redux';
-import {RootState} from '../store';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignInScreen from './SignInScreen';
 import SignUpScreen from './SignUpScreen';
 import OTPVerificationScreen from './OTPVerificationScreen';
 import ForgotPasswordScreen from './ForgotPasswordScreen';
 
+const AuthStack = createNativeStackNavigator();
+
 const AuthScreen = () => {
-  // Get current screen from Redux state
-  const currentScreen = useSelector((state: RootState) => state.auth.currentScreen);
-  
-  // Render appropriate screen based on current screen state
-  switch (currentScreen) {
-    case 'signIn':
-      return <SignInScreen />;
-    case 'signUp':
-      return <SignUpScreen />;
-    case 'otp':
-      return <OTPVerificationScreen />;
-    case 'forgotPassword':
-      return <ForgotPasswordScreen />;
-    default:
-      return <SignInScreen />;
-  }
+  return (
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="SignIn" component={SignInScreen} />
+      <AuthStack.Screen name="SignUp" component={SignUpScreen} />
+      <AuthStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    </AuthStack.Navigator>
+  );
 };
 
 export default AuthScreen;

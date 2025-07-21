@@ -20,7 +20,7 @@ interface RegisterRequest {
 }
 
 interface LoginRequest {
-  email: string;
+  emailOrPhone: string;
   password: string;
 }
 
@@ -150,6 +150,9 @@ class ApiService {
   async getUserProfile(userId: string): Promise<ApiResponse<User>> {
     return this.makeRequest<User>(`/users/${userId}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.authToken}`,
+      },
     });
   }
   

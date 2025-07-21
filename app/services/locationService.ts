@@ -43,15 +43,21 @@ class LocationService {
           // Get city name from coordinates using reverse geocoding
           try {
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+              {
+                headers: {
+                  'User-Agent': 'RuralShareApp/1.0 (sammings2002@gmail.com)', // Replace with your app name and contact email
+                },
+              }
             );
             const responseText = await response.text();
+            let data: any = {}; // Declare data here
             try {
-              const data = JSON.parse(responseText);
+              data = JSON.parse(responseText); // Assign here
               console.log('LocationService: Reverse geocoding success:', data);
             } catch (jsonError) {
               console.error('LocationService: JSON parsing failed, raw response:', responseText);
-              throw jsonError;
+              // Don't re-throw, just log and let data remain empty/default
             }
             
             resolve({

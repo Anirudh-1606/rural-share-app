@@ -10,25 +10,25 @@ import {
   Image,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import Button from '../components/Button';
 import {COLORS, SPACING, BORDER_RADIUS, SHADOWS} from '../utils';
 import {isValidEmail, isRequired} from '../utils/validators';
-import {signIn, setCurrentScreen, clearError} from '../store/slices/authSlice';
+import {signIn, clearError} from '../store/slices/authSlice';
 import {RootState, AppDispatch} from '../store';
 
 const SignInScreen = () => {
+  const navigation = useNavigation();
   // Redux state and dispatch
   const dispatch = useDispatch<AppDispatch>();
   const {isSigningIn, error} = useSelector((state: RootState) => state.auth);
 
   // Form state
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
+  const [emailOrPhoneError, setEmailOrPhoneError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   // Form validation
@@ -36,25 +36,12 @@ const SignInScreen = () => {
     let isValid = true;
     
     // Clear previous errors
-    setEmailError('');
-    setPhoneError('');
+    setEmailOrPhoneError('');
     setPasswordError('');
     
-    // Email validation
-    if (!isRequired(email)) {
-      setEmailError('Email is required');
-      isValid = false;
-    } else if (!isValidEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      isValid = false;
-    }
-    
-    // Phone validation
-    if (!isRequired(phone)) {
-      setPhoneError('Phone number is required');
-      isValid = false;
-    } else if (phone.length < 10) {
-      setPhoneError('Please enter a valid phone number (10 digits)');
+    // Email/Phone validation
+    if (!isRequired(emailOrPhone)) {
+      setEmailOrPhoneError('Email or Phone is required');
       isValid = false;
     }
     
@@ -76,7 +63,7 @@ const SignInScreen = () => {
     
     try {
       // Attempt to sign in
-      const result = await dispatch(signIn({email, phone, password}));
+      const result = await dispatch(signIn({emailOrPhone, password}));
       
       if (signIn.fulfilled.match(result)) {
         // Success - navigation will happen through Redux state
@@ -92,19 +79,13 @@ const SignInScreen = () => {
 
   // Navigate to sign up screen
   const handleNavigateToSignUp = () => {
-    dispatch(setCurrentScreen('signUp'));
+    navigation.navigate('SignUp');
   };
 
-  // Handle email input change
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (emailError) setEmailError(''); // Clear error when user types
-  };
-
-  // Handle phone input change
-  const handlePhoneChange = (text: string) => {
-    setPhone(text);
-    if (phoneError) setPhoneError(''); // Clear error when user types
+  // Handle email/phone input change
+  const handleEmailOrPhoneChange = (text: string) => {
+    setEmailOrPhone(text);
+    if (emailOrPhoneError) setEmailOrPhoneError(''); // Clear error when user types
   };
 
   // Handle password input change
@@ -140,54 +121,28 @@ const SignInScreen = () => {
 
           {/* Form Section */}
           <View style={styles.form}>
-            {/* Email Input */}
+            {/* Email/Phone Input */}
             <View style={styles.inputContainer}>
               <Text variant="label" weight="medium" style={styles.inputLabel}>
-                Email Address
+                Email or Phone
               </Text>
               <TextInput
                 style={[
                   styles.input,
-                  emailError ? styles.inputError : null,
+                  emailOrPhoneError ? styles.inputError : null,
                 ]}
-                placeholder="Enter your email"
+                placeholder="Enter your email or phone"
                 placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
-                value={email}
-                onChangeText={handleEmailChange}
+                value={emailOrPhone}
+                onChangeText={handleEmailOrPhoneChange}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isSigningIn}
               />
-              {emailError ? (
+              {emailOrPhoneError ? (
                 <Text variant="caption" style={styles.errorText}>
-                  {emailError}
-                </Text>
-              ) : null}
-            </View>
-
-            {/* Phone Input */}
-            <View style={styles.inputContainer}>
-              <Text variant="label" weight="medium" style={styles.inputLabel}>
-                Phone Number
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  phoneError ? styles.inputError : null,
-                ]}
-                placeholder="Enter your phone number"
-                placeholderTextColor={COLORS.TEXT.PLACEHOLDER}
-                value={phone}
-                onChangeText={handlePhoneChange}
-                keyboardType="phone-pad"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isSigningIn}
-              />
-              {phoneError ? (
-                <Text variant="caption" style={styles.errorText}>
-                  {phoneError}
+                  {emailOrPhoneError}
                 </Text>
               ) : null}
             </View>
@@ -239,10 +194,10 @@ const SignInScreen = () => {
             {/* Forgot Password Link */}
             <TouchableOpacity
               style={styles.forgotPassword}
-              onPress={() => dispatch(setCurrentScreen('forgotPassword'))}
+              onPress={() => navigation.navigate('ForgotPassword')}
             >
               <Text variant="caption" style={styles.forgotPasswordText}>
-                Forgot your password?
+                Sign in Using OTP!
               </Text>
             </TouchableOpacity>
           </View>

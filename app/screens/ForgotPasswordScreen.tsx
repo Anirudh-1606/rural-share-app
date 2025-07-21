@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import Button from '../components/Button';
@@ -11,6 +13,7 @@ import { RootState, AppDispatch } from '../store';
 import { checkPhoneExists } from '../services/api';
 
 const ForgotPasswordScreen = () => {
+  const navigation = useNavigation();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
@@ -52,6 +55,7 @@ const ForgotPasswordScreen = () => {
     if (!(await validate())) return;
     dispatch(clearError());
     dispatch(startForgotPassword(phone));
+    navigation.navigate('OTPVerification');
   };
 
   return (
@@ -61,9 +65,12 @@ const ForgotPasswordScreen = () => {
         style={styles.container}
       >
         <View style={styles.content}>
-          <Text variant="h2" weight="bold" style={styles.title}>Forgot Password</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
+          </TouchableOpacity>
+          <Text variant="h2" weight="bold" style={styles.title}>Sign in with OTP</Text>
           <Text variant="body" style={styles.subtitle}>
-            Enter your registered phone number to receive OTP
+            Enter your registered phone number to receive an OTP
           </Text>
 
           <View style={styles.inputContainer}>
@@ -108,6 +115,15 @@ const ForgotPasswordScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, padding: SPACING.LG, justifyContent: 'center' },
+  backButton: {
+    position: 'absolute',
+    top: SPACING.LG,
+    left: SPACING.LG,
+  },
+  backImage: {
+    width: 24,
+    height: 24,
+  },
   title: { color: COLORS.PRIMARY.MAIN, marginBottom: SPACING.MD, textAlign: 'center' },
   subtitle: { color: COLORS.TEXT.SECONDARY, marginBottom: SPACING.XL, textAlign: 'center' },
   inputContainer: { marginBottom: SPACING.LG },

@@ -1,102 +1,53 @@
 import React, {useState, useRef, useEffect} from 'react';
 /* eslint-disable react-hooks/exhaustive-deps */
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import Button from '../components/Button';
 import {COLORS, SPACING, BORDER_RADIUS, SHADOWS} from '../utils';
-import {verifyOTP, setCurrentScreen, clearError, updateUserVerification, otpLogin} from '../store/slices/authSlice';
+import {verifyOTP, clearError, updateUserVerification, otpLogin, setOtpChannel} from '../store/slices/authSlice';
 import {RootState, AppDispatch} from '../store';
 import otplessService from '../services/otpless';
 import firebaseSMSService from '../services/firebaseSMS';
 
 const OTPVerificationScreen = () => {
+  const navigation = useNavigation();
   // Redux state and dispatch
   const dispatch = useDispatch<AppDispatch>();
   const {
     isVerifyingOTP,
     pendingUserPhone,
     isForgotPassword,
+    otpChannel,
   } = useSelector((state: RootState) => state.auth);
 
   // OTP state - 6 digit OTP
   const [otp, setOTP] = useState(['', '', '', '', '', '']);
   const [otpError, setOTPError] = useState('');
-  // Let user pick WhatsApp (default) or SMS
-  const [preferredChannel, setPreferredChannel] = useState<'whatsapp' | 'sms' | null>(null);
   // Firebase confirmation object – required to verify OTP later (SMS only)
   const [smsConfirmation, setSMSConfirmation] = useState<any>(null);
-  const [isOTPLessInitialized, setIsOTPLessInitialized] = useState(false);
   const [authStatus, setAuthStatus] = useState<string>('');
-  const [deliveryChannel, setDeliveryChannel] = useState<string>('');
-  const [initializationTime, setInitializationTime] = useState<number>(0);
-  // Flag to ensure we only initiate phone auth once per screen load
-  const [hasInitiatedAuth, setHasInitiatedAuth] = useState<boolean>(false);
   
   // References for OTP inputs
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
-  // Initialize the correct provider once the user makes a choice
-  useEffect(() => {
-    if (preferredChannel === 'whatsapp') {
-      initializeOTPLess();
-    }
-    if (preferredChannel === 'sms') {
-      // Kick off Firebase SMS flow right away
-      startFirebaseSMSAuth();
-    }
+  const [isWhatsAppLoading, setIsWhatsAppLoading] = useState(false);
+  const [isOTPLessInitialized, setIsOTPLessInitialized] = useState(false);
 
-    // cleanup OTPLess on unmount (safe to call even if never initialised)
+  useEffect(() => {
+    startFirebaseSMSAuth();
     return () => {
       otplessService.cleanup();
     };
-  }, [preferredChannel]);
+  }, []);
 
   // Focus on first input when component mounts
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
-
-  // 🚀 Initialize OTPLess service
-  const initializeOTPLess = async () => {
-    try {
-      console.log('🔄 Initializing OTPLess for phone:', pendingUserPhone);
-      
-      // Clear any previous errors and set status
-      setOTPError('');
-      setAuthStatus('Initializing OTP service...');
-      setInitializationTime(Date.now());
-      
-      // Set up callback to handle OTPLess results
-      otplessService.setResultCallback(handleOTPLessResult);
-      
-      // Initialize the service
-      await otplessService.initialize();
-      
-      setIsOTPLessInitialized(true);
-      setAuthStatus('OTP service ready');
-      
-      // Small delay to ensure SDK is fully ready (increased for stability)
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
-      // Do NOT start phone auth here – we will start it once we receive
-      // the "SDK is ready for authentication" callback to ensure a single request
-    } catch (error) {
-      console.error('❌ Failed to initialize OTPLess:', error);
-      setOTPError('Failed to initialize OTP service. Please try again.');
-      setAuthStatus('');
-    }
-  };
 
   // 📱 Start SMS authentication via Firebase
   const startFirebaseSMSAuth = async () => {
@@ -106,17 +57,12 @@ const OTPVerificationScreen = () => {
         return;
       }
 
-      // 🔢 Build a proper E.164 phone string
-      // If the user already typed a +<country><number> we keep it as-is.
-      // If they typed a plain 10-digit Indian number (common case) we prefix +91.
-      // Otherwise you may extend this logic to prompt for country code.
       let phoneE164: string;
       if (pendingUserPhone.startsWith('+')) {
         phoneE164 = pendingUserPhone;
       } else if (/^\d{10}$/.test(pendingUserPhone)) {
-        phoneE164 = `+91${pendingUserPhone}`; // default to India
+        phoneE164 = `+91${pendingUserPhone}`;
       } else {
-        // Fallback: assume caller included country code without +
         phoneE164 = `+${pendingUserPhone}`;
       }
 
@@ -124,7 +70,7 @@ const OTPVerificationScreen = () => {
       const confirmation = await firebaseSMSService.sendOTP(phoneE164);
       setSMSConfirmation(confirmation);
       setAuthStatus('OTP sent via SMS');
-      setHasInitiatedAuth(true);
+      dispatch(setOtpChannel('sms'));
     } catch (error) {
       console.error('❌ Failed to send SMS OTP:', error);
       setOTPError('Unable to send SMS OTP. Please try again.');
@@ -132,119 +78,73 @@ const OTPVerificationScreen = () => {
     }
   };
 
-  // 📱 Start phone authentication with retry logic
-  const startPhoneAuthenticationWithRetry = async (retryCount = 0) => {
+  // 🚀 Initialize OTPLess service
+  const initializeOTPLess = async () => {
+    setIsWhatsAppLoading(true);
     try {
-      setHasInitiatedAuth(true); // Mark that we're attempting auth (controls error visibility)
-      await startPhoneAuthentication();
-      setHasInitiatedAuth(true);
+      setAuthStatus('Initializing WhatsApp OTP service...');
+      otplessService.setResultCallback(handleOTPLessResult);
+      await otplessService.initialize();
+      setIsOTPLessInitialized(true);
+      setAuthStatus('WhatsApp OTP service ready.');
     } catch (error) {
-      console.error('❌ Phone authentication failed, attempt:', retryCount + 1, error);
-      
-      if (retryCount < 2) {
-        // Retry after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await startPhoneAuthenticationWithRetry(retryCount + 1);
-      } else {
-        setOTPError('Failed to send OTP. Please try again.');
-        setAuthStatus('');
-      }
+      console.error('❌ Failed to initialize OTPLess:', error);
+      setOTPError('Failed to initialize WhatsApp OTP service. Please try again.');
+      setAuthStatus('');
+    } finally {
+      setIsWhatsAppLoading(false);
     }
   };
 
-  // 📱 Start phone authentication
-  const startPhoneAuthentication = async () => {
-    if (!pendingUserPhone) {
-      setOTPError('Phone number is required for OTP verification');
+  const handleWhatsAppOTP = async () => {
+    if (!isOTPLessInitialized) {
+      // If not initialized, initialize first. The actual OTP sending will happen in handleOTPLessResult.
+      initializeOTPLess();
       return;
     }
+    // If already initialized, proceed to send OTP
+    sendWhatsAppOTP();
+  };
 
+  const sendWhatsAppOTP = async () => {
     try {
-      // Determine country code and phone number
-      // If user entered '+<code><number>' we split accordingly.
-      // Otherwise we default to India (+91) and treat entire input as phone number.
-      const cleanedInput = pendingUserPhone.replace(/[^\d+]/g, ''); // retain digits and +
+      if (!pendingUserPhone) {
+        setOTPError('Phone number required for OTP');
+        return;
+      }
+      const cleanedInput = pendingUserPhone.replace(/[^\d+]/g, '');
       let countryCode = '91';
       let phoneNumber = cleanedInput;
 
       if (cleanedInput.startsWith('+')) {
-        // Remove '+' then split first up to 3 digits as country code (common max length)
         const match = cleanedInput.match(/^\+(\d{1,3})(\d+)/);
         if (match) {
           countryCode = match[1];
           phoneNumber = match[2];
         }
       }
-      
-      console.log('📱 Starting phone auth:', { countryCode, phoneNumber });
-      
+      setAuthStatus('Sending WhatsApp OTP...');
       await otplessService.startPhoneAuth(phoneNumber, countryCode);
-      setAuthStatus('OTP request sent...');
+      dispatch(setOtpChannel('whatsapp'));
     } catch (error) {
-      console.error('❌ Failed to start phone authentication:', error);
-      setOTPError('Failed to initiate OTP. Please try again.');
+      console.error('❌ Failed to send WhatsApp OTP:', error);
+      setOTPError('Failed to send WhatsApp OTP. Please try again.');
+      setAuthStatus('');
     }
-  };
-
-  // 🔍 Determine if error should be shown to user
-  const shouldShowError = (error: string): boolean => {
-    // Don't show these temporary/initialization errors
-    const temporaryErrors = [
-      'SDK initialization failed',
-      'Failed to initialize the SDK',
-      'Failed to initialize the SDK', // duplicate entry to be safe
-    ];
-    
-    // If we haven't initiated auth yet, hide all errors (SDK still booting)
-    if (!hasInitiatedAuth) {
-      return false;
-    }
-    // If SDK is not initialized and it's a temporary error, don't show
-    if (!isOTPLessInitialized && temporaryErrors.includes(error)) {
-      return false;
-    }
-    
-    // If it's an "Invalid request" error but we're still initializing or just ready, don't show
-    if (error === 'Invalid request' && (
-      authStatus.includes('Initializing') || 
-      authStatus.includes('service ready') ||
-      authStatus.includes('Ready for OTP')
-    )) {
-      return false;
-    }
-    
-    // Don't show "Invalid request" errors within 3 seconds of initialization
-    const timeSinceInit = Date.now() - initializationTime;
-    if (error === 'Invalid request' && timeSinceInit < 3000) {
-      return false;
-    }
-    
-    // Show all other errors
-    return true;
   };
 
   // 🔄 Handle OTPLess service results
   const handleOTPLessResult = (result: any) => {
-    console.log('📱 OTPLess result:', result);
-    
     if (result.success) {
       switch (result.message) {
         case 'SDK is ready for authentication':
-          setAuthStatus('Ready for OTP verification');
-          // If we haven't yet sent the initial OTP request (because SDK failed first), try now
-          if (!hasInitiatedAuth && pendingUserPhone) {
-            startPhoneAuthenticationWithRetry();
-          }
-          setOTPError(''); // Clear any initialization errors
+          setAuthStatus('WhatsApp OTP service ready. Sending OTP...');
+          sendWhatsAppOTP(); // Now send OTP after SDK is ready
           break;
-          
         case 'Authentication initiated':
-          setAuthStatus(`Authentication via ${result.authType}`);
-          setOTPError(''); // Clear any previous errors
+          setAuthStatus(`OTP sent via WhatsApp`);
           break;
-          
         case 'OTP automatically detected':
-          // Auto-fill OTP if detected (Android only)
           if (result.otp) {
             const otpDigits = result.otp.split('');
             setOTP(otpDigits);
@@ -252,112 +152,65 @@ const OTPVerificationScreen = () => {
           }
           break;
         case 'One-tap authentication successful':
-          // ONETAP response delivers token directly (silent auth)
+        case 'OTP verified successfully':
           if (result.token) {
             handleSuccessfulOTPVerification(result.token);
           }
           break;
-        case 'OTP verified successfully':
-          // Handle successful OTP verification
-          handleSuccessfulOTPVerification(result.token);
-          break;
-          
         default:
-          if (result.deliveryChannel) {
-            setDeliveryChannel(result.deliveryChannel);
-            setAuthStatus(`OTP sent via ${result.deliveryChannel}`);
-          } else {
-            setAuthStatus(result.message || 'Ready');
-          }
+          setAuthStatus(result.message || 'Ready');
       }
-      
-      // Clear any previous errors on success
       setOTPError('');
     } else {
-      // Handle errors with intelligent filtering
-      console.error('❌ OTPLess error:', result.error);
-      
-      // Only show error if it's not a temporary initialization error
-      if (shouldShowError(result.error)) {
-        setOTPError(result.error || 'OTP verification failed');
-        setAuthStatus('');
-      } else {
-        // Don't show error, just log it
-        console.log('🔄 Temporary error (not shown to user):', result.error);
-      }
+      setOTPError(result.error || 'OTP verification failed');
+      setAuthStatus('');
     }
   };
 
     // ✅ Handle successful OTP verification
   const handleSuccessfulOTPVerification = async (token?: string) => {
     try {
-      console.log('✅ OTP verification successful, token:', token);
-      
       if (isForgotPassword) {
-        // Password-less login flow
         await dispatch(otpLogin({ phone: pendingUserPhone || '' }));
-        return; // Nothing else to do – user will be logged in
+        return;
       }
 
-      // Normal sign-up verification flow
       const result = await dispatch(verifyOTP({
         phone: pendingUserPhone || '',
         otp: otp.join(''),
       }));
       
       if (verifyOTP.fulfilled.match(result)) {
-        console.log('✅ OTP verified, now updating user verification status');
-        setAuthStatus('Updating user verification...');
-        
-        // Update user verification status using the API
         const payload = result.payload as { userId: string; requiresUserVerification: boolean };
         
         if (payload.requiresUserVerification && payload.userId) {
-          // Update user verification status to true
           const verificationResult = await dispatch(updateUserVerification({
             userId: payload.userId,
             isVerified: true,
-            token: token || 'temp-token', // Use token from OTPLess or temp token
+            token: token || 'temp-token',
           }));
           
-          if (updateUserVerification.fulfilled.match(verificationResult)) {
-            console.log('✅ User verification completed successfully');
-            setAuthStatus('Authentication completed!');
-          } else {
-            console.error('❌ Failed to update user verification');
+          if (!updateUserVerification.fulfilled.match(verificationResult)) {
             setOTPError('Failed to complete user verification. Please try again.');
           }
-        } else {
-          console.log('✅ User authentication completed successfully');
-          setAuthStatus('Authentication completed!');
         }
-      } else {
-        console.error('❌ Failed to complete user authentication');
-        setOTPError('Failed to complete authentication. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Error in successful OTP verification:', error);
       setOTPError('Failed to complete authentication. Please try again.');
     }
   };
 
   // Handle OTP input change
   const handleOTPChange = (value: string, index: number) => {
-    // Only allow single digit
     if (value.length > 1) return;
-    
-    // Only allow numbers
     if (value !== '' && !/^\d$/.test(value)) return;
     
-    // Update OTP array
     const newOTP = [...otp];
     newOTP[index] = value;
     setOTP(newOTP);
     
-    // Clear error when user types
     if (otpError) setOTPError('');
     
-    // Auto-focus next input
     if (value !== '' && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -384,57 +237,65 @@ const OTPVerificationScreen = () => {
 
   // Handle OTP verification
   const handleVerifyOTP = async () => {
-    if (!preferredChannel) {
-      setOTPError('Please choose WhatsApp or SMS first');
-      return;
-    }
     if (!validateOTP()) return;
     
-    // Clear any previous errors
     dispatch(clearError());
     setOTPError('');
     
     const otpString = otp.join('');
     
     try {
-      if (!pendingUserPhone) {
-        setOTPError('Phone number is required for verification');
-        return;
-      }
+      setAuthStatus('Verifying OTP...');
+      let verificationSuccessful = false;
+      let lastError: string | null = null;
 
-      if (preferredChannel === 'sms') {
+      if (otpChannel === 'sms') {
         if (!smsConfirmation) {
           setOTPError('SMS confirmation not found. Please resend OTP.');
           return;
         }
+        try {
+          await firebaseSMSService.verifyOTP(smsConfirmation, otpString);
+          verificationSuccessful = true;
+          setAuthStatus('OTP verified via SMS.');
+        } catch (smsError: any) {
+          console.log('Firebase SMS verification failed:', smsError);
+          lastError = smsError.message || 'Firebase SMS verification failed.';
+        }
+      } else if (otpChannel === 'whatsapp') {
+        try {
+          const cleanedInput = pendingUserPhone.replace(/[^\d+]/g, '');
+          let countryCode = '91';
+          let phoneNumber = cleanedInput;
 
-        setAuthStatus('Verifying SMS OTP...');
-        await firebaseSMSService.verifyOTP(smsConfirmation, otpString);
-        // Treat as successful verification
-        await handleSuccessfulOTPVerification();
+          if (cleanedInput.startsWith('+')) {
+            const match = cleanedInput.match(/^\+(\d{1,3})(\d+)/);
+            if (match) {
+              countryCode = match[1];
+              phoneNumber = match[2];
+            }
+          }
+          await otplessService.verifyOTP(phoneNumber, countryCode, otpString);
+          verificationSuccessful = true;
+          setAuthStatus('OTP verified via WhatsApp.');
+        } catch (whatsappError: any) {
+          console.log('Otpless WhatsApp verification failed:', whatsappError);
+          lastError = whatsappError.message || 'Otpless WhatsApp verification failed.';
+        }
+      } else {
+        setOTPError('Please request an OTP first.');
         return;
       }
 
-      // === WhatsApp flow (unchanged) ===
-
-      // Determine country code and phone number (same logic as before)
-      const cleanedInput = pendingUserPhone.replace(/[^\d+]/g, '');
-      let countryCode = '91';
-      let phoneNumber = cleanedInput;
-
-      if (cleanedInput.startsWith('+')) {
-        const match = cleanedInput.match(/^\+(\d{1,3})(\d+)/);
-        if (match) {
-          countryCode = match[1];
-          phoneNumber = match[2];
-        }
+      if (verificationSuccessful) {
+        await handleSuccessfulOTPVerification();
+        setOTPError(''); // Clear error if any method succeeds
+      } else {
+        setOTPError(lastError || 'Failed to verify OTP. Please try again.');
+        setAuthStatus('');
       }
-      console.log('✅ Verifying OTP via WhatsApp flow');
-      setAuthStatus('Verifying OTP...');
-      await otplessService.verifyOTP(phoneNumber, countryCode, otpString);
-    } catch (error) {
-      console.error('❌ OTP verification error:', error);
-      setOTPError('Failed to verify OTP. Please try again.');
+    } catch (error: any) {
+      setOTPError(error.message || 'Failed to verify OTP. Please try again.');
       setAuthStatus('');
     }
   };
@@ -444,43 +305,20 @@ const OTPVerificationScreen = () => {
     try {
       setAuthStatus('Resending OTP...');
       setOTPError('');
-      
-      // Clear current OTP
       setOTP(['', '', '', '', '', '']);
-      
-      // Restart phone authentication
-      await startPhoneAuthentication();
+      if (otpChannel === 'sms') {
+        await startFirebaseSMSAuth();
+      } else if (otpChannel === 'whatsapp') {
+        await sendWhatsAppOTP();
+      } else {
+        // Default to SMS if no channel is set (e.g., first load)
+        await startFirebaseSMSAuth();
+      }
     } catch (error) {
-      console.error('❌ Failed to resend OTP:', error);
       setOTPError('Failed to resend OTP. Please try again.');
       setAuthStatus('');
     }
   };
-
-  // Navigate back to sign in
-  const handleBackToSignIn = () => {
-    dispatch(setCurrentScreen('signIn'));
-  };
-
-  // Ask the user their preferred channel (rendered before main content)
-  const renderChannelPicker = () => (
-    <View style={{ padding: SPACING.LG, alignItems: 'center' }}>
-      <Text variant="body" style={{ marginBottom: SPACING.MD }}>
-        How would you like to receive your OTP?
-      </Text>
-      <Button
-        title="WhatsApp"
-        onPress={() => setPreferredChannel('whatsapp')}
-        fullWidth
-        style={{ marginBottom: SPACING.SM }}
-      />
-      <Button
-        title="SMS"
-        onPress={() => setPreferredChannel('sms')}
-        fullWidth
-      />
-    </View>
-  );
 
   return (
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
@@ -489,19 +327,19 @@ const OTPVerificationScreen = () => {
         style={styles.container}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          {preferredChannel === null ? (
-            renderChannelPicker()
-          ) : (
             <>
             {/* Header Section */}
           <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
+            </TouchableOpacity>
             <Image
               source={require('../assets/harvest.png')}
               style={styles.headerImage}
               resizeMode="contain"
             />
             <Text variant="h2" weight="bold" style={styles.title}>
-              OTP Verification
+              Sign in using OTP
             </Text>
             <Text variant="body" style={styles.subtitle}>
               Enter the 6-digit code sent to
@@ -516,11 +354,6 @@ const OTPVerificationScreen = () => {
             {authStatus && (
               <Text variant="body" style={styles.statusText}>
                 {authStatus}
-              </Text>
-            )}
-            {deliveryChannel && (
-              <Text variant="caption" style={styles.deliveryText}>
-                OTP sent via {deliveryChannel}
               </Text>
             )}
             {otpError && (
@@ -571,17 +404,17 @@ const OTPVerificationScreen = () => {
             </Text>
           </TouchableOpacity>
 
-          {/* Back to Sign In Link */}
+          {/* WhatsApp OTP Link */}
           <TouchableOpacity
-            style={styles.backToSignIn}
-            onPress={() => dispatch(setCurrentScreen('signIn'))}
+            style={styles.whatsappContainer}
+            onPress={handleWhatsAppOTP}
+            disabled={isVerifyingOTP}
           >
-            <Text variant="caption" style={styles.backToSignInText}>
-              ← Back to Sign In
+            <Text variant="caption" style={styles.whatsappText}>
+              Receive OTP on WhatsApp
             </Text>
           </TouchableOpacity>
             </>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaWrapper>
@@ -593,13 +426,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: SPACING.LG,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     alignItems: 'center',
     marginBottom: SPACING['2XL'],
+  },
+  backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backImage: {
+    width: 24,
+    height: 24,
   },
   headerImage: {
     width: 80,
@@ -630,24 +473,9 @@ const styles = StyleSheet.create({
     color: '#0369A1',
     textAlign: 'center',
   },
-  deliveryContainer: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: BORDER_RADIUS.SM,
-    padding: SPACING.SM,
-    marginBottom: SPACING.MD,
-    alignItems: 'center',
-  },
-  deliveryText: {
-    color: '#166534',
-    textAlign: 'center',
-  },
-  otpSection: {
-    alignItems: 'center',
-    marginBottom: SPACING.XL,
-  },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     width: '100%',
     maxWidth: 300,
     marginBottom: SPACING.MD,
@@ -664,20 +492,9 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT.PRIMARY,
     ...SHADOWS.SM,
   },
-  otpInputFilled: {
-    borderColor: COLORS.PRIMARY.MAIN,
-    backgroundColor: COLORS.PRIMARY.LIGHT,
-  },
   otpInputError: {
     borderColor: '#EF4444',
     borderWidth: 2,
-  },
-  errorContainer: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: BORDER_RADIUS.SM,
-    padding: SPACING.SM,
-    marginTop: SPACING.SM,
-    width: '100%',
   },
   errorText: {
     color: '#EF4444',
@@ -687,24 +504,6 @@ const styles = StyleSheet.create({
   verifyButton: {
     marginBottom: SPACING.LG,
   },
-  resendSection: {
-    alignItems: 'center',
-    marginBottom: SPACING.XL,
-  },
-  resendPrompt: {
-    color: COLORS.TEXT.SECONDARY,
-    textAlign: 'center',
-  },
-  resendLink: {
-    color: COLORS.PRIMARY.MAIN,
-  },
-  backButton: {
-    alignItems: 'center',
-    padding: SPACING.MD,
-  },
-  backButtonText: {
-    color: COLORS.TEXT.SECONDARY,
-  },
   resendContainer: {
     alignItems: 'center',
     marginTop: SPACING.MD,
@@ -712,13 +511,18 @@ const styles = StyleSheet.create({
   resendText: {
     color: COLORS.TEXT.SECONDARY,
   },
-  backToSignIn: {
-    alignItems: 'center',
-    padding: SPACING.MD,
+  resendLink: {
+    color: COLORS.PRIMARY.MAIN,
   },
-  backToSignInText: {
-    color: COLORS.TEXT.SECONDARY,
+  whatsappContainer: {
+    alignItems: 'center',
+    marginTop: SPACING.MD,
+  },
+  whatsappText: {
+    color: COLORS.PRIMARY.MAIN,
   },
 });
 
-export default OTPVerificationScreen; 
+export default OTPVerificationScreen;
+
+ 

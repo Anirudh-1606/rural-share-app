@@ -9,6 +9,7 @@ import AuthScreen from '../screens/AuthScreen';
 import { checkAuth } from '../store/slices/authSlice';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { COLORS } from '../utils';
+import CreateListingScreen from '../screens/CreateListingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,7 +41,15 @@ export default function RootNavigator() {
               animation: 'slide_from_right',
             }}
           />
-        </Stack.Navigator>
+          <Stack.Screen 
+          name="CreateListing" 
+          component={CreateListingScreen}
+          options={{
+            animation: 'slide_from_bottom',
+          }}
+        />
+        
+      </Stack.Navigator>
       ) : (
         <AuthScreen />
       )}

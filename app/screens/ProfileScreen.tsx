@@ -13,8 +13,9 @@ import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import { logout } from '../store/slices/authSlice';
 
 type ProfileSectionItem = {
   icon: string;
@@ -31,6 +32,7 @@ type ProfileSection = {
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
+  const dispatch: AppDispatch = useDispatch();
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -226,7 +228,7 @@ const ProfileScreen = () => {
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => dispatch(logout())}>
           <Ionicons name="log-out-outline" size={22} color={COLORS.NEUTRAL.WHITE} />
           <Text variant="body" weight="semibold" color={COLORS.NEUTRAL.WHITE} style={{ marginLeft: 8 }}>
             Logout
