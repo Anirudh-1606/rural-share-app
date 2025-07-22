@@ -5,12 +5,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Image,
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+
+const backgroundImg = require('../assets/provider-bg.png');
 
 const ProviderScreen = () => {
   const navigation = useNavigation<any>();
@@ -64,7 +67,14 @@ const ProviderScreen = () => {
   ];
 
   return (
-    <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
+    <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1}}>
+      {/* Background Image */}
+      <Image 
+        source={backgroundImg} 
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+      
       <ScrollView 
         contentContainerStyle={styles.container} 
         showsVerticalScrollIndicator={false}
@@ -128,16 +138,19 @@ const ProviderScreen = () => {
                 <Text style={styles.quickActionLabel}>Add New</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity 
+                style={styles.quickActionItem}
+                onPress={() => navigation.navigate('MyListings')}
+              >
                 <View style={styles.quickActionIconWrapper}>
                   <Ionicons name="document-text-outline" size={33} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>My Listings</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity style={styles.quickActionItem}  onPress={() => navigation.navigate('ProviderBookings')}>
                 <View style={styles.quickActionIconWrapper}>
-                  <Ionicons name="checkmark-done-outline" size={33} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="calendar-outline" size={33} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>Bookings</Text>
               </TouchableOpacity>
@@ -202,7 +215,16 @@ const ProviderScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'transparent', // Changed to transparent
+  },
+  backgroundImage: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: 400, // Increased height
+    opacity: 0.5, // Reduced opacity for subtlety
   },
   headerContainer: {
     height: 190,

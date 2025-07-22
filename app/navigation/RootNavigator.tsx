@@ -10,6 +10,10 @@ import { checkAuth } from '../store/slices/authSlice';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { COLORS } from '../utils';
 import CreateListingScreen from '../screens/CreateListingScreen';
+import MyListingsScreen from '../screens/MyListingsScreen';
+import ListingDetailScreen from '../screens/ListingDetailScreen';
+import ProviderBookingsScreen from '../screens/ProviderBookingsScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +50,34 @@ export default function RootNavigator() {
           component={CreateListingScreen}
           options={{
             animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen 
+          name="MyListings" 
+          component={MyListingsScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ListingDetail" 
+          component={ListingDetailScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ProviderBookings" 
+          component={ProviderBookingsScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="OrderDetail" 
+          component={OrderDetailScreen}
+          options={{
+            animation: 'slide_from_right',
           }}
         />
         

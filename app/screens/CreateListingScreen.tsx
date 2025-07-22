@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,8 +16,33 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import CatalogueService from '../services/CatalogueService';
+import ListingService from '../services/ListingService';
+
+interface Category {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  transactionType: string;
+  parentId: string | null;
+  icon: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface SubCategory {
+  _id: string;
+  name: string;
+  categoryId: string;
+  description?: string;
+}
 
 interface ListingFormData {
+  providerId: string;
   title: string;
   description: string;
   categoryId: string;
@@ -38,13 +63,32 @@ interface ListingFormData {
   tags: string[];
 }
 
+// Icon mapping for categories
+const iconMapping: { [key: string]: string } = {
+  'farm_machinery': 'construct-outline',
+  'specialist': 'person-outline',
+  'tools': 'hammer-outline',
+  'storage': 'cube-outline',
+  'event': 'calendar-outline',
+  'produce': 'leaf-outline',
+  'transport': 'car-outline',
+  'default': 'ellipse-outline'
+};
+
 const CreateListingScreen = () => {
   const navigation = useNavigation();
   const [currentStep, setCurrentStep] = useState(1);
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tagInput, setTagInput] = useState('');
+  const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+ 
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [availableSubCategories, setAvailableSubCategories] = useState<SubCategory[]>([]);
   
   const [formData, setFormData] = useState<ListingFormData>({
+    providerId: '687b5692b9434ec2d0e7adc9', // Hardcoded for now
     title: '',
     description: '',
     categoryId: '',
@@ -53,8 +97,8 @@ const CreateListingScreen = () => {
     location: {
       address: '',
       coordinates: {
-        lat: 0,
-        lng: 0,
+        lat: 18.0534,
+        lng: 78.1134,
       },
     },
     price: '',
@@ -65,21 +109,43 @@ const CreateListingScreen = () => {
     tags: [],
   });
 
-  // Dummy data for categories - replace with API call
-  const categories = [
-    { id: '687930f694cb3e5d53ed2367', name: 'Machines & Equipment', icon: 'construct' },
-    { id: '687930f694cb3e5d53ed2368', name: 'Human Resources', icon: 'people' },
-    { id: '687930f694cb3e5d53ed2369', name: 'Seeds & Fertilizers', icon: 'leaf' },
-    { id: '687930f694cb3e5d53ed2370', name: 'Transportation', icon: 'car' },
-  ];
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  // Dummy subcategories - replace with API call based on selected category
-  const subCategories = [
-    { id: '687930f694cb3e5d53ed2375', name: 'Tractors' },
-    { id: '687930f694cb3e5d53ed2376', name: 'Harvesters' },
-    { id: '687930f694cb3e5d53ed2377', name: 'Ploughs' },
-    { id: '687930f694cb3e5d53ed2378', name: 'Seed Drills' },
-  ];
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const categories = await CatalogueService.getCategories();
+      console.log('Fetched categories:', categories);
+      setAvailableCategories(categories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      Alert.alert('Error', 'Failed to load categories. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSubCategories = async (categoryId: string) => {
+    try {
+      setLoading(true);
+      const subCategories = await CatalogueService.getSubCategories(categoryId);
+      console.log('Fetched subcategories:', subCategories);
+      setAvailableSubCategories(subCategories);
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      Alert.alert('Error', 'Failed to load subcategories. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategorySelect = async (categoryId: string) => {
+    handleInputChange('categoryId', categoryId);
+    handleInputChange('subCategoryId', ''); // Reset subcategory
+    await fetchSubCategories(categoryId);
+  };
 
   const unitOptions = [
     { value: 'per_hour', label: 'Per Hour' },
@@ -147,23 +213,53 @@ const CreateListingScreen = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // TODO: Add providerId from logged in user
-    const payload = {
-      ...formData,
-      providerId: 'USER_ID_PLACEHOLDER', // Replace with actual user ID
-      price: parseFloat(formData.price),
-      minimumOrder: parseInt(formData.minimumOrder),
-      isActive: true,
-      viewCount: 0,
-      bookingCount: 0,
-      isVerified: false,
-    };
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-    console.log('Listing payload:', payload);
-    Alert.alert('Success', 'Listing created successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // Create payload matching API structure
+      const payload = {
+        providerId: "687b5692b9434ec2d0e7adc9", // Hardcoded as requested
+        title: formData.title,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        subCategoryId: formData.subCategoryId,
+        photos: formData.photos.length > 0 ? formData.photos : [
+          "https://example.com/placeholder1.jpg",
+          "https://example.com/placeholder2.jpg"
+        ],
+        coordinates: [formData.location.coordinates.lng, formData.location.coordinates.lat],
+        price: parseFloat(formData.price),
+        unitOfMeasure: formData.unitOfMeasure,
+        minimumOrder: parseInt(formData.minimumOrder),
+        availableFrom: formatDateForAPI(formData.availableFrom),
+        availableTo: formatDateForAPI(formData.availableTo),
+        tags: formData.tags,
+        isActive: true
+      };
+
+      console.log('Listing payload:', payload);
+      
+      // TODO: Uncomment when API is ready
+      const response = await ListingService.createListing(payload);
+      console.log('Listing created:', response);
+      
+      Alert.alert('Success', 'Listing created successfully!', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      Alert.alert('Error', 'Failed to create listing. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStepIndicator = () => (
@@ -248,21 +344,22 @@ const CreateListingScreen = () => {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Category *</Text>
+        {loading && <Text style={styles.loadingText}>Loading categories...</Text>}
         <View style={styles.categoryGrid}>
-          {categories.map((category) => (
+          {availableCategories.map((category) => (
             <TouchableOpacity
-              key={category.id}
+              key={category._id}
               style={[
                 styles.categoryCard,
-                formData.categoryId === category.id && styles.categoryCardActive,
+                formData.categoryId === category._id && styles.categoryCardActive,
               ]}
-              onPress={() => handleInputChange('categoryId', category.id)}
+              onPress={() => handleCategorySelect(category._id)}
             >
               <Ionicons
-                name={category.icon as any}
+                name={iconMapping[category.icon] || iconMapping.default}
                 size={28}
                 color={
-                  formData.categoryId === category.id
+                  formData.categoryId === category._id
                     ? COLORS.PRIMARY.MAIN
                     : '#6B7280'
                 }
@@ -270,8 +367,9 @@ const CreateListingScreen = () => {
               <Text
                 style={[
                   styles.categoryText,
-                  formData.categoryId === category.id && styles.categoryTextActive,
+                  formData.categoryId === category._id && styles.categoryTextActive,
                 ]}
+                numberOfLines={2}
               >
                 {category.name}
               </Text>
@@ -283,27 +381,32 @@ const CreateListingScreen = () => {
       {formData.categoryId && (
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Subcategory *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {subCategories.map((sub) => (
-              <TouchableOpacity
-                key={sub.id}
-                style={[
-                  styles.subCategoryChip,
-                  formData.subCategoryId === sub.id && styles.subCategoryChipActive,
-                ]}
-                onPress={() => handleInputChange('subCategoryId', sub.id)}
-              >
-                <Text
+          {loading && <Text style={styles.loadingText}>Loading subcategories...</Text>}
+          {availableSubCategories.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {availableSubCategories.map((sub) => (
+                <TouchableOpacity
+                  key={sub._id}
                   style={[
-                    styles.subCategoryText,
-                    formData.subCategoryId === sub.id && styles.subCategoryTextActive,
+                    styles.subCategoryChip,
+                    formData.subCategoryId === sub._id && styles.subCategoryChipActive,
                   ]}
+                  onPress={() => handleInputChange('subCategoryId', sub._id)}
                 >
-                  {sub.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.subCategoryText,
+                      formData.subCategoryId === sub._id && styles.subCategoryTextActive,
+                    ]}
+                  >
+                    {sub.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noDataText}>No subcategories available for this category</Text>
+          )}
         </View>
       )}
     </View>
@@ -329,7 +432,10 @@ const CreateListingScreen = () => {
 
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
           <Text style={styles.inputLabel}>Unit</Text>
-          <TouchableOpacity style={styles.dropdown}>
+          <TouchableOpacity 
+            style={styles.dropdown}
+            onPress={() => setShowUnitDropdown(!showUnitDropdown)}
+          >
             <Text style={styles.dropdownText}>
               {unitOptions.find(u => u.value === formData.unitOfMeasure)?.label}
             </Text>
@@ -337,6 +443,23 @@ const CreateListingScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {showUnitDropdown && (
+        <View style={styles.dropdownOptions}>
+          {unitOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={styles.dropdownOption}
+              onPress={() => {
+                handleInputChange('unitOfMeasure', option.value);
+                setShowUnitDropdown(false);
+              }}
+            >
+              <Text style={styles.dropdownOptionText}>{option.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Minimum Order</Text>
@@ -380,9 +503,9 @@ const CreateListingScreen = () => {
         <DateTimePicker
           value={formData.availableFrom}
           mode="date"
-          display="default"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, date) => {
-            setShowFromDatePicker(false);
+            setShowFromDatePicker(Platform.OS === 'ios');
             if (date) handleInputChange('availableFrom', date);
           }}
         />
@@ -392,9 +515,9 @@ const CreateListingScreen = () => {
         <DateTimePicker
           value={formData.availableTo}
           mode="date"
-          display="default"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, date) => {
-            setShowToDatePicker(false);
+            setShowToDatePicker(Platform.OS === 'ios');
             if (date) handleInputChange('availableTo', date);
           }}
         />
@@ -442,10 +565,15 @@ const CreateListingScreen = () => {
             style={styles.tagInput}
             placeholder="Add tags (e.g., tractor, plough)"
             placeholderTextColor="#9CA3AF"
-            onSubmitEditing={(e) => {
-              handleAddTag(e.nativeEvent.text);
-              e.nativeEvent.text = '';
+            value={tagInput}
+            onChangeText={setTagInput}
+            onSubmitEditing={() => {
+              if (tagInput.trim()) {
+                handleAddTag(tagInput.trim());
+                setTagInput('');
+              }
             }}
+            returnKeyType="done"
           />
         </View>
         <View style={styles.tagsContainer}>
@@ -504,6 +632,7 @@ const CreateListingScreen = () => {
             <TouchableOpacity
               style={[styles.primaryButton, currentStep === 1 && { flex: 1 }]}
               onPress={handleNext}
+              disabled={loading}
             >
               <Text style={styles.primaryButtonText}>
                 {currentStep === 4 ? 'Create Listing' : 'Next'}
@@ -577,7 +706,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   stepLineActive: {
-    backgroundColor: COLORS.PRIMARY.MAIN,
+    backgroundColor: COLORS.PRIMARY.DARK,
   },
   scrollContent: {
     flexGrow: 1,
@@ -587,7 +716,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: 4,
@@ -596,6 +725,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: '#6B7280',
+    fontWeight: '400',
     marginBottom: 24,
   },
   inputGroup: {
@@ -635,13 +765,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    minHeight: 100,
   },
   categoryCardActive: {
     borderColor: COLORS.PRIMARY.MAIN,
     backgroundColor: COLORS.PRIMARY.LIGHT,
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.POPPINS.MEDIUM,
     color: '#6B7280',
     marginTop: 8,
@@ -688,6 +819,26 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.PRIMARY,
+  },
+  dropdownOptions: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    marginTop: -15,
+    marginBottom: 20,
+    marginHorizontal: 106,
+  },
+  dropdownOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  dropdownOptionText: {
+    fontSize: 14,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.PRIMARY,
   },
@@ -809,6 +960,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: '#6B7280',
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  noDataText: {
+    fontSize: 14,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: '#6B7280',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
 });
 
