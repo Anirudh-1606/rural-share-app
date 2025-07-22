@@ -41,6 +41,10 @@ const animatedPlaceholders = [
   'drip irrigation',
 ];
 
+const INITIAL_HEADER_HEIGHT = 170; // Original fixed height
+const SEARCH_BAR_OFFSET = 28; // Original bottom offset of search bar
+const SEARCH_BAR_HEIGHT = 56; // Estimated height of the search bar (padding + font size + some buffer)
+
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const [currentLocation, setCurrentLocation] = useState('Loading...');
@@ -48,6 +52,10 @@ export default function HomeScreen() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const placeholderAnim = useRef(new Animated.Value(1)).current;
+
+  const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
+  const [filterContentHeight, setFilterContentHeight] = useState(0); // Height of the expandable content
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   useEffect(() => {
     // Get current location
@@ -87,6 +95,33 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, [fadeAnim, placeholderAnim]);
 
+  const handleFilterToggle = (expanded: boolean, filterComponentHeight: number) => {
+    setIsFilterExpanded(expanded);
+    setFilterContentHeight(filterComponentHeight);
+
+    const targetHeaderHeight = expanded
+      ? INITIAL_HEADER_HEIGHT + filterComponentHeight + SPACING.MD // Add some padding/margin for search bar
+      : INITIAL_HEADER_HEIGHT;
+
+    Animated.timing(headerHeightAnim, {
+      toValue: targetHeaderHeight,
+      duration: 300, // Match LayoutAnimation duration
+      useNativeDriver: false, // Height animation often requires useNativeDriver: false
+    }).start();
+  };
+
+  // Calculate dynamic top for search bar
+  // The search bar should be positioned relative to the header's dynamic height
+  // It should appear just below the ExpandableSearchFilter component
+  const searchBarTop = isFilterExpanded
+    ? INITIAL_HEADER_HEIGHT + filterContentHeight + SPACING.SM // Position directly below the expanded filter
+    : INITIAL_HEADER_HEIGHT - SEARCH_BAR_OFFSET; // Original position when collapsed
+
+  // Adjust services section margin top based on header height and search bar position
+  const servicesSectionMarginTop = isFilterExpanded
+    ?  SPACING.SM + SEARCH_BAR_HEIGHT + SPACING.SM // Below search bar when expanded
+    : SPACING['2XL']; // Below search bar when collapsed // Original margin top
+
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
       {/* Background Image */}
@@ -102,7 +137,7 @@ export default function HomeScreen() {
         bounces={true}
       >
         {/* Header Section */}
-        <View style={styles.headerContainer}>
+        <Animated.View style={[styles.headerContainer, { height: headerHeightAnim }]}>
           <View style={styles.headerBackground}>
             <View style={styles.headerCircle1} />
             <View style={styles.headerCircle2} />
@@ -129,10 +164,10 @@ export default function HomeScreen() {
           </View>
 
         {/* Date Range Selector */}
-        <ExpandableSearchFilter />
+        <ExpandableSearchFilter onToggleExpand={handleFilterToggle} />
 
           {/* Floating Search Bar */}
-          <View style={styles.searchContainer}>
+          <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
             <View style={styles.searchBar}>
               <Ionicons name="search" size={20} color="#94a3b8" />
               <TextInput
@@ -156,11 +191,11 @@ export default function HomeScreen() {
                 </View>
               )}
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
 
         {/* Services Section */}
-        <Animated.View style={[styles.servicesSection, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.servicesSection, { opacity: fadeAnim, marginTop: servicesSectionMarginTop }]}>
           <Text style={styles.sectionTitle}>Explore Services</Text>
           <ScrollView 
             horizontal 
@@ -207,7 +242,7 @@ export default function HomeScreen() {
               <Text style={styles.ctaSubtitle}>Find workers nearby</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
                 <Text style={styles.ctaButtonText}>Check Now</Text>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
+                <Ionicons name="people" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
             <View style={styles.ctaIconWrapper}>
@@ -239,7 +274,6 @@ const styles = StyleSheet.create({
   },
   // Header Styles
   headerContainer: {
-    height: 170,
     position: 'relative',
   },
   headerBackground: {
@@ -315,8 +349,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 20,
     right: 20,
-    bottom: -28,
     zIndex: 10,
+    top: INITIAL_HEADER_HEIGHT - SEARCH_BAR_OFFSET, // Default position when collapsed
   },
   searchBar: {
     backgroundColor: 'white',

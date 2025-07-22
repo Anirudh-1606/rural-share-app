@@ -119,10 +119,10 @@ export default function DateRangeCalendar({ onConfirm, initialStartDate, initial
         }}
       />
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm} disabled={!startDate || !endDate}>
-        <Text weight="semibold" color={!startDate || !endDate ? COLORS.TEXT.PLACEHOLDER : 'white'}>
+        <Text weight="semibold" color={!startDate || !endDate ? COLORS.TEXT.INVERSE : 'white'}>
           Confirm
         </Text>
-        <Ionicons name="checkmark-circle-outline" size={20} color={!startDate || !endDate ? COLORS.TEXT.PLACEHOLDER : 'white'} style={{ marginLeft: 8 }} />
+        <Ionicons name="checkmark-circle-outline" size={20} color={!startDate || !endDate ? COLORS.TEXT.INVERSE : 'white'} style={{ marginLeft: 8 }} />
       </TouchableOpacity>
     </View>
   );
