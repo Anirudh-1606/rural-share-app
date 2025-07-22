@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, Animated } from 'react-native';
 import Text from './Text';
 import { COLORS, SPACING, BORDER_RADIUS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,6 +17,25 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
   const [contentHeight, setContentHeight] = useState(0);
   const dispatch = useDispatch();
   const { startDate, endDate } = useSelector((state: RootState) => state.dateRange);
+
+  const dotAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(dotAnimation, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dotAnimation, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [dotAnimation]);
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -53,8 +72,8 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
     <View style={styles.container}>
       <TouchableOpacity style={styles.header} onPress={toggleExpand} activeOpacity={0.8}>
         <View style={styles.headerTextContainer}>
-          {startDate && endDate && <View style={styles.dot} />}
-          <Text weight="semibold" color={COLORS.TEXT.INVERSE} style={styles.immediateButton}>
+          <Animated.View style={[styles.flashingDot, { opacity: dotAnimation }]} />
+          <Text weight="medium" color={COLORS.TEXT.INVERSE} style={styles.headerText}>
             {startDate && endDate ? `${formatDate(startDate)} - ${formatDate(endDate)}` : 'Immediate'}
           </Text>
         </View>
@@ -81,6 +100,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'transparent',
     borderRadius: BORDER_RADIUS.MD,
+    marginTop: SPACING['XL'],
     marginBottom: SPACING.SM,
     overflow: 'hidden',
     marginHorizontal: SPACING.MD,
@@ -97,14 +117,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerText: {
-    color: COLORS.WHITE,
+    color: COLORS.TEXT.INVERSE,
     fontSize: 16,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.WHITE,
+  flashingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.SECONDARY.LIGHT, // Light green color
     marginRight: SPACING.XS,
   },
   content: {

@@ -147,7 +147,7 @@ export default function HomeScreen() {
             {/* Location and Profile Row */}
             <View style={styles.headerTop}>
               <View style={styles.locationWrapper}>
-                <Text style={styles.locationLabel}>Location</Text>
+                {/* <Text style={styles.locationLabel}>Location</Text> */}
                 <View style={styles.locationInfo}>
                   <Text style={styles.locationText}>{currentLocation}</Text>
                   <Ionicons name="location" size={16} color="white" style={styles.locationIcon} />
@@ -163,8 +163,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
+
         {/* Date Range Selector */}
-        <ExpandableSearchFilter onToggleExpand={handleFilterToggle} />
+        <ExpandableSearchFilter  onToggleExpand={handleFilterToggle} />
 
           {/* Floating Search Bar */}
           <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
