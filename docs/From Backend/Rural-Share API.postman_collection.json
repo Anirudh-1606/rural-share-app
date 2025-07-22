@@ -1,0 +1,1840 @@
+{
+	"info": {
+		"_postman_id": "f2794d2e-afbc-4a61-b2ca-13f311ef9720",
+		"name": "Rural-Share API",
+		"description": "Complete API collection for Rural-Share marketplace backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46846801",
+		"_collection_link": "https://rural-share.postman.co/workspace/Rural-Share-Workspace~45964aa3-d064-4ccf-a86b-d30557110b13/collection/16528578-f2794d2e-afbc-4a61-b2ca-13f311ef9720?action=share&source=collection_link&creator=46846801"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('userId', response._id || response.id);",
+									"    pm.test('User registered successfully', () => {",
+									"        pm.response.to.have.status(201).or.to.have.status(200);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bhaskar Rao\",\n    \"email\": \"bhaskar@example.com\",\n    \"password\": \"password123\",\n    \"phone\": \"+919876543210\",\n    \"role\": \"individual\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', response.access_token);",
+									"    pm.test('Login successful', () => {",
+									"        pm.expect(response).to.have.property('access_token');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"bhaskar@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Preferences",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultLandingPage\": \"provider\",\n    \"defaultProviderTab\": \"active\",\n    \"preferredLanguage\": \"te\",\n    \"notificationsEnabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/providers/preferences",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"preferences"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "KYC",
+			"item": [
+				{
+					"name": "Upload KYC Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{userId}}\",\n    \"docType\": \"aadhar\",\n    \"docURL\": \"https://example.com/documents/aadhar123.jpg\",\n    \"docNumber\": \"1234-5678-9012\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/kyc/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"kyc",
+								"documents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User KYC Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/kyc/documents/user/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"kyc",
+								"documents",
+								"user",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update KYC Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"approved\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/kyc/documents/:documentId/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"kyc",
+								"documents",
+								":documentId",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Addresses",
+			"item": [
+				{
+					"name": "Create Address",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('addressId', response._id || response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{userId}}\",\n    \"tag\": \"home\",\n    \"addressLine1\": \"House No. 45, Main Road\",\n    \"addressLine2\": \"Near Panchayat Office\",\n    \"village\": \"Rampur\",\n    \"tehsil\": \"Medak\",\n    \"district\": \"Medak\",\n    \"state\": \"Telangana\",\n    \"pincode\": \"502301\",\n    \"coordinates\": [78.1134, 18.0534],\n    \"isDefault\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/addresses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"addresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Addresses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/addresses/user/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"addresses",
+								"user",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"addressLine2\": \"Opposite Government School\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/addresses/{{addressId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"addresses",
+								"{{addressId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set Default Address",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/addresses/{{addressId}}/set-default",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"addresses",
+								"{{addressId}}",
+								"set-default"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Address",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/addresses/{{addressId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"addresses",
+								"{{addressId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Catalogue",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const categories = pm.response.json();",
+									"    if (categories.length > 0) {",
+									"        pm.collectionVariables.set('categoryId', categories[0]._id || categories[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalogue/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"catalogue",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories by Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalogue/categories?category=machines_equipment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"catalogue",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "machines_equipment"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subcategories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const subcategories = pm.response.json();",
+									"    if (subcategories.length > 0) {",
+									"        pm.collectionVariables.set('subcategoryId', subcategories[0]._id || subcategories[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalogue/{{categoryId}}/subcategories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"catalogue",
+								"{{categoryId}}",
+								"subcategories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category Hierarchy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalogue/hierarchy",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"catalogue",
+								"hierarchy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Category\",\n    \"description\": \"Test category description\",\n    \"category\": \"machines_equipment\",\n    \"transactionType\": \"rental\",\n    \"icon\": \"test-icon\",\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/catalogue",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"catalogue"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Listings",
+			"item": [
+				{
+					"name": "Create Listing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('listingId', response._id || response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"providerId\": \"{{userId}}\",\n    \"title\": \"John Deere Tractor with Plough\",\n    \"description\": \"50HP tractor available for hourly rental. Well maintained with experienced operator.\",\n    \"categoryId\": \"{{categoryId}}\",\n    \"subCategoryId\": \"{{subcategoryId}}\",\n    \"photos\": [\n        \"https://example.com/tractor1.jpg\",\n        \"https://example.com/tractor2.jpg\"\n    ],\n    \"coordinates\": [78.1134, 18.0534],\n    \"price\": 800,\n    \"unitOfMeasure\": \"per_hour\",\n    \"minimumOrder\": 2,\n    \"availableFrom\": \"2025-01-01\",\n    \"availableTo\": \"2025-12-31\",\n    \"tags\": [\"tractor\", \"ploughing\", \"50hp\"],\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/listings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Listings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/listings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Listing by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/listings/{{listingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings",
+								"{{listingId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Provider Listings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/listings/provider/{{providerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings",
+								"provider",
+								"{{providerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Listing",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 900,\n    \"description\": \"Updated description with better details\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/listings/{{listingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings",
+								"{{listingId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Listing",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/listings/{{listingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"listings",
+								"{{listingId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Availability",
+			"item": [
+				{
+					"name": "Create Availability",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"{{listingId}}\",\n    \"startDate\": \"2025-01-01\",\n    \"endDate\": \"2025-12-31\",\n    \"availableDays\": [\"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\", \"saturday\"],\n    \"timeSlots\": [\n        {\n            \"start\": \"08:00\",\n            \"end\": \"18:00\"\n        }\n    ],\n    \"isRecurring\": true,\n    \"recurringPattern\": \"weekly\",\n    \"blockedDates\": [],\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/availabilities",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"availabilities"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Listing Availability",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/availabilities/listing/{{listingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"availabilities",
+								"listing",
+								"{{listingId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Availability",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"blockedDates\": [\"2025-01-15\", \"2025-01-16\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/availabilities/:availabilityId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"availabilities",
+								":availabilityId"
+							],
+							"variable": [
+								{
+									"key": "availabilityId",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('orderId', response._id || response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"{{listingId}}\",\n    \"seekerId\": \"{{userId}}\",\n    \"providerId\": \"{{providerId}}\",\n    \"orderType\": \"rental\",\n    \"totalAmount\": 3200,\n    \"serviceStartDate\": \"2025-01-20T08:00:00Z\",\n    \"serviceEndDate\": \"2025-01-20T12:00:00Z\",\n    \"quantity\": 4,\n    \"unitOfMeasure\": \"per_hour\",\n    \"coordinates\": [78.1234, 18.0456]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{orderId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Seeker Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/seeker/{{seekerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"seeker",
+								"{{seekerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Provider Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/provider/{{providerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"provider",
+								"{{providerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"accepted\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{orderId}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Provider Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/provider/{{providerId}}/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"provider",
+								"{{providerId}}",
+								"summary"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Escrow",
+			"item": [
+				{
+					"name": "Create Escrow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": \"{{orderId}}\",\n    \"amount\": 3200\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/escrow",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Escrow by Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/escrow/order/{{orderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow",
+								"order",
+								"{{orderId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Escrow Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/escrow/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow",
+								"summary"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Release Escrow",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/escrow/{{orderId}}/release",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow",
+								"{{orderId}}",
+								"release"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refund Escrow",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Service not provided as agreed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/escrow/{{orderId}}/refund",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow",
+								"{{orderId}}",
+								"refund"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Partial Refund",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 1600,\n    \"reason\": \"Partial service delivered\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/escrow/{{orderId}}/partial-refund",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"escrow",
+								"{{orderId}}",
+								"partial-refund"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Commissions",
+			"item": [
+				{
+					"name": "Create Commission",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": \"{{orderId}}\",\n    \"amount\": 320\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/commissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"commissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Commissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/commissions/order/{{orderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"commissions",
+								"order",
+								"{{orderId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Ratings",
+			"item": [
+				{
+					"name": "Create Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": \"{{orderId}}\",\n    \"raterId\": \"{{userId}}\",\n    \"ratedId\": \"{{providerId}}\",\n    \"score\": 5,\n    \"review\": \"Excellent service! Tractor was in good condition and operator was skilled.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ratings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ratings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Ratings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ratings/order/{{orderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ratings",
+								"order",
+								"{{orderId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Ratings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ratings/user/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ratings",
+								"user",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Create Conversation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('conversationId', response._id || response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"participantId\": \"{{providerId}}\",\n    \"relatedOrderId\": \"{{orderId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/conversations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conversations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chat/conversations?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conversationId\": \"{{conversationId}}\",\n    \"type\": \"text\",\n    \"content\": \"Hello, I would like to book your tractor for tomorrow morning.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chat/conversations/{{conversationId}}/messages?page=1&limit=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"conversations",
+								"{{conversationId}}",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Messages as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conversationId\": \"{{conversationId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/messages/mark-read",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"mark-read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chat/unread-count",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"unread-count"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Messages (System)",
+			"item": [
+				{
+					"name": "Create Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Welcome to Rural-Share!\",\n    \"content\": \"Your account has been verified. You can now start listing your resources.\",\n    \"type\": \"notification\",\n    \"recipientId\": \"{{userId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Broadcast Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Platform Maintenance\",\n    \"content\": \"The platform will undergo maintenance on Sunday from 2 AM to 4 AM.\",\n    \"type\": \"broadcast\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/messages/broadcast",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages",
+								"broadcast"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/messages?unreadOnly=false",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages"
+							],
+							"query": [
+								{
+									"key": "unreadOnly",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Message as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/messages/:messageId/read",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages",
+								":messageId",
+								"read"
+							],
+							"variable": [
+								{
+									"key": "messageId",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/messages/unread-count",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages",
+								"unread-count"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Disputes",
+			"item": [
+				{
+					"name": "Create Dispute",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('disputeId', response._id || response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": \"{{orderId}}\",\n    \"reason\": \"Service not provided as promised\",\n    \"description\": \"The tractor arrived 3 hours late and the operator was not skilled as advertised.\",\n    \"evidenceUrls\": [\"https://example.com/evidence1.jpg\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/disputes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Disputes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/disputes?status=open",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "open"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dispute by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/disputes/{{disputeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes",
+								"{{disputeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Message to Dispute",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"I have additional evidence to support my claim.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/disputes/{{disputeId}}/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes",
+								"{{disputeId}}",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Dispute Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"under_review\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/disputes/{{disputeId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes",
+								"{{disputeId}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Dispute (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"resolution\": \"partial_refund\",\n    \"refundAmount\": 1600,\n    \"adminNotes\": \"Both parties share responsibility. 50% refund approved.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/disputes/{{disputeId}}/resolve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes",
+								"{{disputeId}}",
+								"resolve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dispute Stats (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/disputes/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"disputes",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Providers",
+			"item": [
+				{
+					"name": "Get Provider Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/providers/{{providerId}}/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"{{providerId}}",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Provider Bookings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/providers/{{providerId}}/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"{{providerId}}",
+								"bookings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Bookings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/providers/{{providerId}}/bookings/active",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"{{providerId}}",
+								"bookings",
+								"active"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Completed Bookings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/providers/{{providerId}}/bookings/completed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"{{providerId}}",
+								"bookings",
+								"completed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Bookings to Review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/providers/{{providerId}}/bookings/to-review",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"providers",
+								"{{providerId}}",
+								"bookings",
+								"to-review"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "providerId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "seekerId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "listingId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orderId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "categoryId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "subcategoryId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

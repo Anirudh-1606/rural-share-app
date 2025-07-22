@@ -13,6 +13,9 @@ import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import { logout } from '../store/slices/authSlice';
 
 type ProfileSectionItem = {
   icon: string;
@@ -29,8 +32,11 @@ type ProfileSection = {
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
+  const dispatch: AppDispatch = useDispatch();
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const handleTabPreferenceChange = async (tab: 'seeker' | 'provider') => {
     setDefaultTab(tab);
@@ -42,8 +48,8 @@ const ProfileScreen = () => {
       title: 'Account Settings',
       items: [
         { icon: 'person-outline', label: 'Edit Profile', onPress: () => {} },
-        { icon: 'call-outline', label: 'Phone Number', value: '+91 98765 43210' },
-        { icon: 'mail-outline', label: 'Email', value: 'user@example.com' },
+        { icon: 'call-outline', label: 'Phone Number', value: user?.phone || 'N/A' },
+        { icon: 'mail-outline', label: 'Email', value: user?.email || 'N/A' },
         { icon: 'location-outline', label: 'Address', onPress: () => {} },
       ],
     },
@@ -88,10 +94,10 @@ const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
           <Text variant="h3" weight="bold" align="center" style={styles.userName}>
-            John Doe
+            {user?.name || 'John Doe'}
           </Text>
           <Text variant="body" color={COLORS.TEXT.SECONDARY} align="center">
-            Rural Service Provider
+            {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Rural Service Provider'}
           </Text>
         </View>
 
@@ -222,7 +228,7 @@ const ProfileScreen = () => {
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => dispatch(logout())}>
           <Ionicons name="log-out-outline" size={22} color={COLORS.NEUTRAL.WHITE} />
           <Text variant="body" weight="semibold" color={COLORS.NEUTRAL.WHITE} style={{ marginLeft: 8 }}>
             Logout

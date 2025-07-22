@@ -1,43 +1,21 @@
 import React from 'react';
-import {View, StyleSheet} from 'react-native';
-import SafeAreaWrapper from '../components/SafeAreaWrapper';
-import Text from '../components/Text';
-import {COLORS, SPACING} from '../utils';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import SignInScreen from './SignInScreen';
+import SignUpScreen from './SignUpScreen';
+import OTPVerificationScreen from './OTPVerificationScreen';
+import ForgotPasswordScreen from './ForgotPasswordScreen';
 
-export default function AuthScreen() {
+const AuthStack = createNativeStackNavigator();
+
+const AuthScreen = () => {
   return (
-    <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
-      <View style={styles.container}>
-        <Text variant="h1" weight="bold" align="center" style={styles.title}>
-          RuralShare
-        </Text>
-        <Text variant="h4" weight="medium" align="center" style={styles.subtitle}>
-          Sign in to continue
-        </Text>
-        <Text variant="body" align="center" style={styles.body}>
-          Authentication screen with Poppins fonts and safe area handling.
-        </Text>
-      </View>
-    </SafeAreaWrapper>
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="SignIn" component={SignInScreen} />
+      <AuthStack.Screen name="SignUp" component={SignUpScreen} />
+      <AuthStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    </AuthStack.Navigator>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: SPACING.MD,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    marginBottom: SPACING.SM,
-    color: COLORS.PRIMARY.MAIN,
-  },
-  subtitle: {
-    marginBottom: SPACING.LG,
-    color: COLORS.TEXT.SECONDARY,
-  },
-  body: {
-    color: COLORS.TEXT.SECONDARY,
-  },
-});
+export default AuthScreen;
