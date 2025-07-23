@@ -2,6 +2,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -11,27 +12,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   var reactNativeFactory: RCTReactNativeFactory?
 
   func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-  ) -> Bool {
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
+      _ application: UIApplication,
+      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+      FirebaseApp.configure() // <--- ADD THIS LINE
 
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
+      let delegate = ReactNativeDelegate()
+      let factory = RCTReactNativeFactory(delegate: delegate)
+      delegate.dependencyProvider = RCTAppDependencyProvider()
 
-    window = UIWindow(frame: UIScreen.main.bounds)
+      reactNativeDelegate = delegate
+      reactNativeFactory = factory
 
-    factory.startReactNative(
-      withModuleName: "RuralShareApp",
-      in: window,
-      launchOptions: launchOptions
-    )
+      window = UIWindow(frame: UIScreen.main.bounds)
 
-    return true
+      factory.startReactNative(
+        withModuleName: "RuralShareApp",
+        in: window,
+        launchOptions: launchOptions
+      )
+
+      return true
+    }
   }
-}
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   override func sourceURL(for bridge: RCTBridge) -> URL? {
