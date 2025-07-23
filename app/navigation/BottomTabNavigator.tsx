@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen';
 import ProviderScreen from '../screens/ProviderScreen';
-import Text from '../components/Text';
-import { COLORS, BORDER_RADIUS, SHADOWS } from '../utils';
+import Text from '../components/Text'; // Custom Text component
+import { COLORS, BORDER_RADIUS, SHADOWS } from '../utils'; // Your theme constants
 
 const Tab = createBottomTabNavigator();
 
@@ -37,7 +38,7 @@ export default function BottomTabNavigator() {
   }, []);
 
   if (isLoading) {
-    return null; // Or a loading screen
+    return null; // Or loading spinner
   }
 
   return (
@@ -45,35 +46,80 @@ export default function BottomTabNavigator() {
       initialRouteName={defaultTab === 'provider' ? 'Provider' : 'Seeker'}
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: COLORS.PRIMARY.MAIN,
-        tabBarInactiveTintColor: COLORS.TEXT.SECONDARY,
+        tabBarShowLabel: false,
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 16,
+          left: 16,
+          right: 16,
+          height: 60,
+          borderRadius: BORDER_RADIUS.XL || 30,
           backgroundColor: COLORS.BACKGROUND.NAV,
-          borderTopLeftRadius: BORDER_RADIUS.LG,
-          borderTopRightRadius: BORDER_RADIUS.LG,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          paddingTop: 12,
           ...SHADOWS.MD,
+          borderTopWidth: 0,
+          elevation: 8,
         },
-        tabBarIcon: ({ color, focused }) => {
+        tabBarIcon: ({ focused }) => {
           let iconName = '';
-          if (route.name === 'Seeker') iconName = focused ? 'search' : 'search-outline';
-          else if (route.name === 'Provider') iconName = focused ? 'briefcase' : 'briefcase-outline';
-          else if (route.name === 'Bookings') iconName = focused ? 'calendar' : 'calendar-outline';
-          else if (route.name === 'Notifications') iconName = focused ? 'notifications' : 'notifications-outline';
-          return <Ionicons name={iconName} size={24} color={color} />;
+          let label = '';
+
+          if (route.name === 'Seeker') {
+            iconName = 'search-outline';
+            label = 'Seeker';
+          } else if (route.name === 'Provider') {
+            iconName = 'briefcase-outline';
+            label = 'Provider';
+          } else if (route.name === 'Bookings') {
+            iconName = 'calendar-outline';
+            label = 'Bookings';
+          } else if (route.name === 'Notifications') {
+            iconName = 'notifications-outline';
+            label = 'Notifications';
+          }
+
+          return (
+            <View
+              style={{
+                flexDirection: 'column',
+                backgroundColor: focused ? COLORS.PRIMARY.MAIN : 'transparent',
+                paddingHorizontal: focused ? 5 : 0,
+                paddingVertical: focused ? 2 : 0,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: focused ? 100 : undefined,
+                maxHeight: 60,
+                minHeight: 60,
+                marginLeft: 5,
+                alignSelf: 'center',
+              }}
+            >
+              <Ionicons
+                name={iconName}
+                size={20}
+                color={focused ? COLORS.BACKGROUND.NAV : COLORS.TEXT.SECONDARY}
+              />
+              {focused && (
+                <Text
+                  style={{
+                    color: COLORS.BACKGROUND.NAV,
+                    marginLeft: 6,
+                    fontSize: 12,
+                    fontWeight: '600',
+                  }}
+                >
+                  {label}
+                  
+                </Text>
+                
+
+                  
+              )}
+            </View>
+          );
         },
-        tabBarLabel: ({ color, focused }) => (
-          <Text 
-            variant="caption" 
-            weight={focused ? 'semibold' : 'regular'} 
-            color={color} 
-            style={{ fontSize: 12, marginTop: -2 }}
-          >
-            {route.name}
-          </Text>
-        ),
       })}
     >
       <Tab.Screen name="Seeker" component={HomeScreen} />
