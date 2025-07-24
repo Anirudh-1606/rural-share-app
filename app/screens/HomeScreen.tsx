@@ -8,7 +8,8 @@ import {
   Image, 
   Animated, 
   Platform,
-  Dimensions 
+  Dimensions,
+  AppState
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
@@ -17,6 +18,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
 import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
+import CatalogueService from '../services/CatalogueService';
+
+import categoryIcons from '../utils/icons';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -34,6 +38,32 @@ const exploreItems = [
   { icon: dripIrrigationIcon, label: 'Drip Irrigation' },
 ];
 
+interface Category {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  transactionType: string;
+  parentId: string | null;
+  icon: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+const iconMapping: { [key: string]: string } = {
+  'farm_machinery': 'construct-outline',
+  'specialist': 'person-outline',
+  'tools': 'hammer-outline',
+  'storage': 'cube-outline',
+  'event': 'calendar-outline',
+  'produce': 'leaf-outline',
+  'transport': 'car-outline',
+  'default': 'ellipse-outline'
+};
+
 const animatedPlaceholders = [
   'tractor',
   'seed sowing',
@@ -41,9 +71,8 @@ const animatedPlaceholders = [
   'drip irrigation',
 ];
 
-const INITIAL_HEADER_HEIGHT = 170; // Original fixed height
-const SEARCH_BAR_OFFSET = 28; // Original bottom offset of search bar
-const SEARCH_BAR_HEIGHT = 56; // Estimated height of the search bar (padding + font size + some buffer)
+const INITIAL_HEADER_HEIGHT = 170;
+const SEARCH_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -52,102 +81,61 @@ export default function HomeScreen() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const placeholderAnim = useRef(new Animated.Value(1)).current;
-
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
-  const [filterContentHeight, setFilterContentHeight] = useState(0); // Height of the expandable content
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    // Get current location
     const fetchLocation = async () => {
       const location = await LocationService.getCurrentLocation();
-      if (location && location.city) {
-        setCurrentLocation(location.city.toUpperCase());
-      } else {
-        setCurrentLocation('LOCATION UNAVAILABLE');
-      }
+      setCurrentLocation(location?.city?.toUpperCase() || 'LOCATION UNAVAILABLE');
     };
     fetchLocation();
+  }, []);
 
-    // Fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await CatalogueService.getCategories();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
-    // Animate placeholder text
-    const interval = setInterval(() => {
-      Animated.timing(placeholderAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(() => {
-        setPlaceholderIndex((prev) => (prev + 1) % animatedPlaceholders.length);
-        Animated.timing(placeholderAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [fadeAnim, placeholderAnim]);
-
-  const handleFilterToggle = (expanded: boolean, filterComponentHeight: number) => {
-    setIsFilterExpanded(expanded);
-    setFilterContentHeight(filterComponentHeight);
-
+  const handleFilterToggle = (expanded: boolean, filterContentHeight: number) => {
     const targetHeaderHeight = expanded
-      ? INITIAL_HEADER_HEIGHT + filterComponentHeight + SPACING.MD // Add some padding/margin for search bar
+      ? INITIAL_HEADER_HEIGHT + filterContentHeight
       : INITIAL_HEADER_HEIGHT;
 
     Animated.timing(headerHeightAnim, {
       toValue: targetHeaderHeight,
-      duration: 300, // Match LayoutAnimation duration
-      useNativeDriver: false, // Height animation often requires useNativeDriver: false
+      duration: 300,
+      useNativeDriver: false,
     }).start();
   };
 
-  // Calculate dynamic top for search bar
-  // The search bar should be positioned relative to the header's dynamic height
-  // It should appear just below the ExpandableSearchFilter component
-  const searchBarTop = isFilterExpanded
-    ? INITIAL_HEADER_HEIGHT + filterContentHeight + SPACING.SM // Position directly below the expanded filter
-    : INITIAL_HEADER_HEIGHT - SEARCH_BAR_OFFSET; // Original position when collapsed
-
-  // Adjust services section margin top based on header height and search bar position
-  const servicesSectionMarginTop = isFilterExpanded
-    ?  SPACING.SM + SEARCH_BAR_HEIGHT + SPACING.SM // Below search bar when expanded
-    : SPACING['2XL']; // Below search bar when collapsed // Original margin top
+  const searchBarTop = headerHeightAnim.interpolate({
+    inputRange: [INITIAL_HEADER_HEIGHT, 1000],
+    outputRange: [INITIAL_HEADER_HEIGHT - SEARCH_BAR_HEIGHT / 2, 1000 - SEARCH_BAR_HEIGHT / 2],
+    extrapolate: 'clamp',
+  });
 
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
-      {/* Background Image */}
-      <Image 
-        source={backgroundImg} 
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      />
+      <Image source={backgroundImg} style={styles.backgroundImage} resizeMode="cover" />
       
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
-        {/* Header Section */}
         <Animated.View style={[styles.headerContainer, { height: headerHeightAnim }]}>
-          <View style={styles.headerBackground}>
-            <View style={styles.headerCircle1} />
-            <View style={styles.headerCircle2} />
-          </View>
-          
+          <View style={styles.headerBackground} />
           <View style={styles.headerContent}>
-            {/* Location and Profile Row */}
             <View style={styles.headerTop}>
               <View style={styles.locationWrapper}>
-                {/* <Text style={styles.locationLabel}>Location</Text> */}
                 <View style={styles.locationInfo}>
                   <Text style={styles.locationText}>{currentLocation}</Text>
                   <Ionicons name="location" size={16} color="white" style={styles.locationIcon} />
@@ -162,66 +150,62 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-
-        {/* Date Range Selector */}
-        <ExpandableSearchFilter  onToggleExpand={handleFilterToggle} />
-
-          {/* Floating Search Bar */}
-          <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
-            <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color="#94a3b8" />
-              <TextInput
-                value={searchText}
-                onChangeText={setSearchText}
-                placeholder=" "
-                placeholderTextColor="#94a3b8"
-                style={styles.searchInput}
-              />
-              {!searchText && (
-                <View style={styles.animatedPlaceholderContainer}>
-                  <Text style={styles.animatedPlaceholder}>Search for </Text>
-                  <Animated.Text
-                    style={[
-                      styles.animatedPlaceholder,
-                      { opacity: placeholderAnim },
-                    ]}
-                  >
-                    {animatedPlaceholders[placeholderIndex]}
-                  </Animated.Text>
-                </View>
-              )}
-            </View>
-          </Animated.View>
+          <ExpandableSearchFilter onToggleExpand={handleFilterToggle} />
         </Animated.View>
 
-        {/* Services Section */}
-        <Animated.View style={[styles.servicesSection, { opacity: fadeAnim, marginTop: servicesSectionMarginTop }]}>
-          <Text style={styles.sectionTitle}>Explore Services</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.servicesScrollContent}
-          >
-            {exploreItems.map((item, index) => (
+        <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color="#94a3b8" />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder=" "
+              placeholderTextColor="#94a3b8"
+              style={styles.searchInput}
+            />
+            {!searchText && (
+              <View style={styles.animatedPlaceholderContainer}>
+                <Text style={styles.animatedPlaceholder}>Search for </Text>
+                <Animated.Text style={[styles.animatedPlaceholder, { opacity: placeholderAnim }]}>
+                  {animatedPlaceholders[placeholderIndex]}
+                </Animated.Text>
+              </View>
+            )}
+          </View>
+        </Animated.View>
+
+        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT + SPACING.MD }]}>
+          <Text style={styles.sectionTitle}>Browse by Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScrollContent}>
+            {categories.slice(0, 4).map(category => (
               <TouchableOpacity
-                key={index}
+                key={category._id}
                 style={styles.serviceCard}
                 activeOpacity={0.7}
-                onPress={() => {}}
+                onPress={() => navigation.navigate('CategoryBrowser', { selectedCategoryId: category._id })}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Image source={item.icon} style={styles.serviceIcon} resizeMode="contain" />
+                  <Image source={categoryIcons[category.icon] || null} style={styles.serviceIcon} />
                 </View>
-                <Text style={styles.serviceLabel}>{item.label}</Text>
+                <Text style={styles.serviceLabel}>{category.name}</Text>
               </TouchableOpacity>
             ))}
+            {categories.length > 4 && (
+              <TouchableOpacity 
+                style={styles.serviceCard}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('CategoryBrowser')}
+              >
+                <View style={styles.serviceIconWrapper}>
+                  <Ionicons name="ellipsis-horizontal-circle-outline" size={45} color={COLORS.PRIMARY.MAIN} />
+                </View>
+                <Text style={styles.serviceLabel}>More</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
-        </Animated.View>
+        </View>
 
-        {/* CTA Cards */}
         <View style={styles.ctaSection}>
-          {/* Mechanical Services Card */}
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
               <Text style={styles.ctaTitle}>Need mechanical services?</Text>
@@ -236,7 +220,6 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Human Resources Card */}
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
               <Text style={styles.ctaTitle}>Need human resources?</Text>
@@ -252,12 +235,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Padding */}
         <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaWrapper>
   );
 }
+
 
 const styles = StyleSheet.create({
   scrollContent: {
@@ -273,42 +256,22 @@ const styles = StyleSheet.create({
     height: 400,
     opacity: 0.5,
   },
-  // Header Styles
   headerContainer: {
     position: 'relative',
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
     backgroundColor: COLORS.PRIMARY.MAIN,
-    overflow: 'hidden',
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
   },
-  headerCircle1: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 200,
-    height: 200,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 100,
-  },
-  headerCircle2: {
-    position: 'absolute',
-    bottom: -100,
-    left: -60,
-    width: 250,
-    height: 250,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 125,
+  headerBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.PRIMARY.MAIN,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    overflow: 'hidden',
   },
   headerContent: {
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 20 : 20,
+    paddingHorizontal: SPACING.MD,
+    paddingTop: Platform.OS === 'ios' ? SPACING.MD : SPACING.LG,
   },
   headerTop: {
     flexDirection: 'row',
@@ -317,12 +280,6 @@ const styles = StyleSheet.create({
   },
   locationWrapper: {
     flex: 1,
-  },
-  locationLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    fontFamily: FONTS.POPPINS.REGULAR,
-    marginBottom: 2,
   },
   locationInfo: {
     flexDirection: 'row',
@@ -345,24 +302,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOWS.MD,
   },
-  // Search Bar Styles
   searchContainer: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: SPACING.MD,
+    right: SPACING.MD,
     zIndex: 10,
-    top: INITIAL_HEADER_HEIGHT - SEARCH_BAR_OFFSET, // Default position when collapsed
   },
   searchBar: {
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.LG,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.MD,
+    gap: SPACING.SM,
     ...SHADOWS.LG,
-    position: 'relative',
   },
   searchInput: {
     flex: 1,
@@ -380,40 +334,40 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   animatedPlaceholder: {
-    color: '#94a3b8',
+    color: COLORS.TEXT.PLACEHOLDER,
     fontFamily: FONTS.POPPINS.REGULAR,
     fontSize: 15,
   },
-  // Services Section
   servicesSection: {
-    paddingLeft: 20,
-    marginTop: 60,
+    paddingLeft: SPACING.MD,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
-    marginBottom: 16,
+    marginBottom: SPACING.MD,
   },
   servicesScrollContent: {
-    paddingRight: 20,
+    paddingRight: SPACING.MD,
   },
   serviceCard: {
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: SPACING.LG,
   },
   serviceIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
-    backgroundColor: '#FFC06E',
+    width: 80,
+    height: 80,
+    borderRadius: BORDER_RADIUS.XL,
+    backgroundColor: COLORS.NEUTRAL.GRAY[100],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.SM,
+    ...SHADOWS.SM,
   },
   serviceIcon: {
-    width: 45,
-    height: 45,
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
   },
   serviceLabel: {
     fontSize: 12,
@@ -421,59 +375,52 @@ const styles = StyleSheet.create({
     color: '#475569',
     textAlign: 'center',
   },
-  // CTA Section
   ctaSection: {
-    paddingHorizontal: 20,
-    marginTop: 32,
-    gap: 16,
+    paddingHorizontal: SPACING.MD,
+    marginTop: SPACING.XL,
+    gap: SPACING.MD,
   },
   ctaCard: {
     backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: BORDER_RADIUS.XL,
+    padding: SPACING.LG,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
     ...SHADOWS.MD,
-    position: 'relative',
     overflow: 'hidden',
   },
   ctaContent: {
     flex: 1,
-    zIndex: 2,
   },
   ctaTitle: {
     fontSize: 18,
     fontFamily: FONTS.POPPINS.BOLD,
     color: COLORS.TEXT.PRIMARY,
-    marginBottom: 4,
+    marginBottom: SPACING.XS,
     lineHeight: 26,
   },
   ctaSubtitle: {
     fontSize: 14,
     fontFamily: FONTS.POPPINS.REGULAR,
-    color: '#64748b',
-    marginBottom: 12,
+    color: COLORS.TEXT.SECONDARY,
+    marginBottom: SPACING.MD,
   },
   ctaButton: {
     backgroundColor: COLORS.SECONDARY.LIGHT,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM,
+    borderRadius: BORDER_RADIUS.MD,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 6,
+    gap: SPACING.XS,
   },
   ctaButtonText: {
     fontSize: 13,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.PRIMARY.MAIN,
   },
-  ctaImageWrapper: {
-    position: 'relative',
-    zIndex: 2,
-  },
+  ctaImageWrapper: {},
   ctaImage: {
     width: 100,
     height: 100,
@@ -484,16 +431,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.SECONDARY.LIGHT,
-    borderRadius: 20,
-  },
-  // Decorative background for CTA
-  ctaDecoration: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 200,
-    height: 200,
-    backgroundColor: 'rgba(45, 122, 78, 0.05)',
-    borderRadius: 100,
+    borderRadius: BORDER_RADIUS.LG,
   },
 });

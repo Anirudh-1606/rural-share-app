@@ -8,65 +8,82 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setDateRange, clearDateRange } from '../store/slices/dateRangeSlice';
 import { RootState } from '../store';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+
+
 
 export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExpand: (expanded: boolean, contentHeight: number) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [contentHeight, setContentHeight] = useState(0);
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+  const contentOpacityAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useDispatch();
   const { startDate, endDate } = useSelector((state: RootState) => state.dateRange);
-
   const dotAnimation = useRef(new Animated.Value(0)).current;
+  const isMeasured = contentHeight > 0;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(dotAnimation, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(dotAnimation, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [dotAnimation]);
+    if (!startDate || !endDate) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(dotAnimation, { toValue: 1, duration: 1000, useNativeDriver: true }),
+          Animated.timing(dotAnimation, { toValue: 0.3, duration: 1000, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      dotAnimation.setValue(1); // Keep dot solid when a date is selected
+    }
+  }, [startDate, endDate, dotAnimation]);
 
   const toggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!isMeasured) return;
+
     const newExpandedState = !expanded;
     setExpanded(newExpandedState);
-    // Pass the expanded state and content height to the parent
-    if (onToggleExpand) {
-      onToggleExpand(newExpandedState, contentHeight);
-    }
-  };
 
-  const handleContentLayout = (event: any) => {
-    // Only set content height if it's not already set or if it changes
-    if (contentHeight === 0 || contentHeight !== event.nativeEvent.layout.height) {
-      setContentHeight(event.nativeEvent.layout.height);
+    if (newExpandedState) {
+      Animated.sequence([
+        Animated.timing(animatedHeight, { toValue: contentHeight, duration: 300, useNativeDriver: false }),
+        Animated.timing(contentOpacityAnim, { toValue: 1, duration: 200, delay: 100, useNativeDriver: true }),
+      ]).start(() => onToggleExpand(true, contentHeight));
+    } else {
+      Animated.sequence([
+        Animated.timing(contentOpacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(animatedHeight, { toValue: 0, duration: 300, useNativeDriver: false }),
+      ]).start(() => onToggleExpand(false, 0));
     }
   };
 
   const handleConfirmDate = (start: string, end: string) => {
     dispatch(setDateRange({ startDate: start, endDate: end }));
-    toggleExpand();
+    if (expanded) {
+      toggleExpand();
+    }
   };
 
   const handleClearDate = () => {
     dispatch(clearDateRange());
+    if (expanded) {
+      toggleExpand();
+    }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+
+  const renderContent = () => (
+    <>
+      <DateRangeCalendar 
+        onConfirm={handleConfirmDate} 
+        initialStartDate={startDate || undefined}
+        initialEndDate={endDate || undefined}
+      />
+      <TouchableOpacity style={styles.immediateButton} onPress={handleClearDate}>
+        <Text color={COLORS.TEXT.INVERSE}>Set to Immediate</Text>
+      </TouchableOpacity>
+    </>
+  );
 
   return (
     <View style={styles.container}>
@@ -77,19 +94,20 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
             {startDate && endDate ? `${formatDate(startDate)} - ${formatDate(endDate)}` : 'Immediate'}
           </Text>
         </View>
-        <Ionicons name= {expanded ? "chevron-up" : "chevron-down"} size={20} color={COLORS.TEXT.INVERSE} />
+        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color={COLORS.TEXT.INVERSE} />
       </TouchableOpacity>
       
-      {expanded && (
-        <View style={styles.content} onLayout={handleContentLayout}>
-          <DateRangeCalendar 
-            onConfirm={handleConfirmDate} 
-            initialStartDate={startDate || undefined}
-            initialEndDate={endDate || undefined}
-          />
-          <TouchableOpacity style={styles.immediateButton} onPress={handleClearDate}>
-            <Text color={COLORS.TEXT.INVERSE}>Set to Immediate</Text>
-          </TouchableOpacity>
+      <Animated.View style={[styles.content, { height: animatedHeight }]}>
+        <Animated.View style={[{ opacity: contentOpacityAnim }]}>
+          {isMeasured && renderContent()}
+        </Animated.View>
+      </Animated.View>
+
+      {!isMeasured && (
+        <View style={styles.hiddenContainer} pointerEvents="none">
+          <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
+            {renderContent()}
+          </View>
         </View>
       )}
     </View>
@@ -102,7 +120,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.MD,
     marginTop: SPACING['XL'],
     marginBottom: SPACING.SM,
-    overflow: 'hidden',
     marginHorizontal: SPACING.MD,
   },
   header: {
@@ -124,16 +141,24 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.SECONDARY.LIGHT, // Light green color
+    backgroundColor: COLORS.SECONDARY.LIGHT,
     marginRight: SPACING.XS,
   },
   content: {
     backgroundColor: 'transparent',
-    padding: SPACING.SM,
+    overflow: 'hidden',
   },
   immediateButton: {
     alignItems: 'center',
     marginTop: SPACING.SM,
     backgroundColor: 'transparent',
+  },
+  hiddenContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    opacity: 0,
+    zIndex: -1,
   },
 });

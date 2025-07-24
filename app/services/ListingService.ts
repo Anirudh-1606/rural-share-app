@@ -100,6 +100,19 @@ class ListingService {
       throw error;
     }
   }
+
+  // Get listings by category and subcategory
+  async getListingsByCategories(categoryId: string, subCategoryId: string): Promise<Listing[]> {
+    try {
+      const response = await axios.get(`${BASE_URL}/listings`, {
+        params: { categoryId, subCategoryId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching listings by category and subcategory:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ListingService();
