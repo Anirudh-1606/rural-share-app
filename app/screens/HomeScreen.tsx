@@ -19,6 +19,8 @@ import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
 import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
 import CatalogueService from '../services/CatalogueService';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 import categoryIcons from '../utils/icons';
 
@@ -83,6 +85,9 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
+  
+  // Get date range from Redux
+  const dateRange = useSelector((state: RootState) => state.dateRange);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -122,6 +127,42 @@ export default function HomeScreen() {
     extrapolate: 'clamp',
   });
 
+  // Handle search submission
+  const handleSearch = () => {
+    navigation.navigate('SearchResults', {
+      searchQuery: searchText,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
+  // Handle category selection
+  const handleCategoryPress = (category: Category) => {
+    navigation.navigate('SearchResults', {
+      searchQuery: category.name,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
+  // Handle search bar tap
+  const handleSearchBarPress = () => {
+    navigation.navigate('SearchResults', {
+      searchQuery: searchText,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
       <Image source={backgroundImg} style={styles.backgroundImage} resizeMode="cover" />
@@ -133,6 +174,12 @@ export default function HomeScreen() {
       >
         <Animated.View style={[styles.headerContainer, { height: headerHeightAnim }]}>
           <View style={styles.headerBackground} />
+          
+          {/* Light Green Circles Pattern */}
+          <View style={styles.headerCircle1} />
+          <View style={styles.headerCircle2} />
+          <View style={styles.headerCircle3} />
+          
           <View style={styles.headerContent}>
             <View style={styles.headerTop}>
               <View style={styles.locationWrapper}>
@@ -154,7 +201,11 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
-          <View style={styles.searchBar}>
+          <TouchableOpacity 
+            style={styles.searchBar}
+            onPress={handleSearchBarPress}
+            activeOpacity={0.95}
+          >
             <Ionicons name="search" size={20} color="#94a3b8" />
             <TextInput
               value={searchText}
@@ -162,6 +213,8 @@ export default function HomeScreen() {
               placeholder=" "
               placeholderTextColor="#94a3b8"
               style={styles.searchInput}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
             />
             {!searchText && (
               <View style={styles.animatedPlaceholderContainer}>
@@ -171,10 +224,10 @@ export default function HomeScreen() {
                 </Animated.Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         </Animated.View>
 
-        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT + SPACING.MD }]}>
+        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT}]}>
           <Text style={styles.sectionTitle}>Browse by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScrollContent}>
             {categories.slice(0, 4).map(category => (
@@ -197,7 +250,7 @@ export default function HomeScreen() {
                 onPress={() => navigation.navigate('CategoryBrowser')}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Ionicons name="ellipsis-horizontal-circle-outline" size={45} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="ellipsis-horizontal-circle-outline" size={50} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.serviceLabel}>More</Text>
               </TouchableOpacity>
@@ -261,6 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY.MAIN,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
+    overflow: 'hidden',
   },
   headerBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -269,9 +323,39 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 14,
     overflow: 'hidden',
   },
+  // Light Green Circle Patterns
+  headerCircle1: {
+    position: 'absolute',
+    right: -80,
+    top: -40,
+    width: 250,
+    height: 250,
+    backgroundColor: 'rgba(144, 238, 144, 0.15)', // Light green with transparency
+    borderRadius: 125,
+  },
+  headerCircle2: {
+    position: 'absolute',
+    left: -100,
+    top: 50,
+    width: 200,
+    height: 200,
+    backgroundColor: 'rgba(152, 251, 152, 0.1)', // Another shade of light green
+    borderRadius: 100,
+  },
+  headerCircle3: {
+    position: 'absolute',
+    right: 40,
+    bottom: -60,
+    width: 150,
+    height: 150,
+    backgroundColor: 'rgba(144, 238, 144, 0.12)', // Light green
+    borderRadius: 75,
+  },
   headerContent: {
     paddingHorizontal: SPACING.MD,
     paddingTop: Platform.OS === 'ios' ? SPACING.MD : SPACING.LG,
+    position: 'relative',
+    zIndex: 1,
   },
   headerTop: {
     flexDirection: 'row',
@@ -348,17 +432,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.MD,
   },
   servicesScrollContent: {
-    paddingRight: SPACING.MD,
+    paddingRight: SPACING.SM,
   },
   serviceCard: {
     alignItems: 'center',
     marginRight: SPACING.LG,
   },
   serviceIconWrapper: {
-    width: 80,
-    height: 80,
+    width: 75,
+    height: 75,
     borderRadius: BORDER_RADIUS.XL,
-    backgroundColor: COLORS.NEUTRAL.GRAY[100],
+    backgroundColor: COLORS.SECONDARY.LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.SM,

@@ -616,8 +616,8 @@ const styles = StyleSheet.create({
     padding: SPACING.MD,
   },
   subCategoryIconContainer: {
-    width: 66,
-    height: 66,
+    width: 75,
+    height: 75,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.SECONDARY.LIGHT,
