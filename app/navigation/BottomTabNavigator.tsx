@@ -48,7 +48,7 @@ export default function BottomTabNavigator() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          position: 'absolute',
+          position: 'relative',
           bottom: 16,
           left: 16,
           right: 16,

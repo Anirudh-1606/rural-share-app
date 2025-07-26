@@ -339,7 +339,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   servicesSection: {
-    paddingLeft: SPACING.MD,
+    paddingLeft: SPACING.SM,
+    paddingRight: SPACING.SM,
   },
   sectionTitle: {
     fontSize: 18,
