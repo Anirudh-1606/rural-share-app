@@ -14,6 +14,7 @@ import MyListingsScreen from '../screens/MyListingsScreen';
 import ListingDetailScreen from '../screens/ListingDetailScreen';
 import ProviderBookingsScreen from '../screens/ProviderBookingsScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
+import CategoryBrowserScreen from '../screens/CategoryBrowserScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +77,13 @@ export default function RootNavigator() {
         <Stack.Screen 
           name="OrderDetail" 
           component={OrderDetailScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="CategoryBrowser" 
+          component={CategoryBrowserScreen}
           options={{
             animation: 'slide_from_right',
           }}

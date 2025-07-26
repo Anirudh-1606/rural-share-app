@@ -1,5 +1,5 @@
 import Geolocation from 'react-native-geolocation-service';
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, AppState } from 'react-native';
 
 export interface LocationData {
   latitude: number;
@@ -10,6 +10,21 @@ export interface LocationData {
 }
 
 class LocationService {
+  private async ensureAppIsActive(): Promise<void> {
+    return new Promise((resolve) => {
+      if (AppState.currentState === 'active') {
+        resolve();
+      } else {
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+          if (nextAppState === 'active') {
+            subscription.remove();
+            resolve();
+          }
+        });
+      }
+    });
+  }
+
   async requestLocationPermission(): Promise<boolean> {
     if (Platform.OS === 'ios') {
       const auth = await Geolocation.requestAuthorization('whenInUse');
@@ -84,6 +99,7 @@ class LocationService {
 
   async getCurrentLocation(): Promise<LocationData | null> {
     try {
+      await this.ensureAppIsActive(); // Wait for app to be active
       const hasPermission = await this.requestLocationPermission();
       if (!hasPermission) {
         console.log('LocationService: Location permission denied');
