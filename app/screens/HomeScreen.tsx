@@ -30,7 +30,8 @@ const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
 const seedSowingIcon = require('../assets/seed.png');
 const dripIrrigationIcon = require('../assets/drip.png');
-const harvestIcon = require('../assets/harvest.png');
+const mechanicalIcon = require('../assets/mechanical.png');
+const farmerIcon = require('../assets/farmer.png');
 const backgroundImg = require('../assets/provider-bg.png');
 
 const exploreItems = [
@@ -269,7 +270,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.ctaImageWrapper}>
-              <Image source={harvestIcon} style={styles.ctaImage} resizeMode="contain" />
+              <Image source={mechanicalIcon} style={styles.ctaImage} resizeMode="contain" />
             </View>
           </TouchableOpacity>
 
@@ -282,8 +283,8 @@ export default function HomeScreen() {
                 <Ionicons name="people" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
-            <View style={styles.ctaIconWrapper}>
-              <Ionicons name="people" size={60} color={COLORS.PRIMARY.MAIN} />
+             <View style={styles.ctaImageWrapper}>
+              <Image source={farmerIcon} style={styles.ctaImage} resizeMode="contain" />
             </View>
           </TouchableOpacity>
         </View>
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
   ctaCard: {
     backgroundColor: 'white',
     borderRadius: BORDER_RADIUS.XL,
-    padding: SPACING.LG,
+    padding: SPACING.MD,
     flexDirection: 'row',
     alignItems: 'center',
     ...SHADOWS.MD,
