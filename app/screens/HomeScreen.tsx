@@ -259,35 +259,34 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.ctaSection}>
+       <View style={styles.ctaSection}>
+        <Text style={styles.quickServicesTitle}>Quick Services</Text>
+        <View style={styles.ctaCardsRow}>
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need mechanical services?</Text>
-              <Text style={styles.ctaSubtitle}>At your ease</Text>
+              <Text style={styles.ctaTitle}>Need mechanical{'\n'}help?</Text>
+              <Text style={styles.ctaSubtitle}>Find nearby{'\n'}tractor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
-                <Text style={styles.ctaButtonText}>Check Now</Text>
+                <Text style={styles.ctaButtonText}>Explore</Text>
                 <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
-            <View style={styles.ctaImageWrapper}>
-              <Image source={mechanicalIcon} style={styles.ctaImage} resizeMode="contain" />
-            </View>
+            <Image source={mechanicalIcon} style={styles.ctaImage} resizeMode="contain" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need human resources?</Text>
-              <Text style={styles.ctaSubtitle}>Find workers nearby</Text>
+              <Text style={styles.ctaTitle}>Need workers?</Text>
+              <Text style={styles.ctaSubtitle}>Hire farm labor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
-                <Text style={styles.ctaButtonText}>Check Now</Text>
-                <Ionicons name="people" size={16} color={COLORS.PRIMARY.MAIN} />
+                <Text style={styles.ctaButtonText}>Explore</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
-             <View style={styles.ctaImageWrapper}>
-              <Image source={farmerIcon} style={styles.ctaImage} resizeMode="contain" />
-            </View>
+            <Image source={farmerIcon} style={styles.ctaImage} resizeMode="contain" />
           </TouchableOpacity>
         </View>
+      </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -463,32 +462,44 @@ const styles = StyleSheet.create({
   ctaSection: {
     paddingHorizontal: SPACING.MD,
     marginTop: SPACING.XL,
+  },
+  quickServicesTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
+    marginBottom: SPACING.MD,
+  },
+  ctaCardsRow: {
+    flexDirection: 'row',
     gap: SPACING.MD,
   },
   ctaCard: {
+    flex: 1,
     backgroundColor: 'white',
     borderRadius: BORDER_RADIUS.XL,
-    padding: SPACING.MD,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...SHADOWS.MD,
+    padding: SPACING.LG,
+    minHeight: 160,
+    position: 'relative',
     overflow: 'hidden',
+    ...SHADOWS.MD,
   },
   ctaContent: {
     flex: 1,
+    zIndex: 1,
   },
   ctaTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FONTS.POPPINS.BOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
-    lineHeight: 26,
+    lineHeight: 22,
   },
   ctaSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.SECONDARY,
     marginBottom: SPACING.MD,
+    lineHeight: 18,
   },
   ctaButton: {
     backgroundColor: COLORS.SECONDARY.LIGHT,
@@ -505,10 +516,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.PRIMARY.MAIN,
   },
-  ctaImageWrapper: {},
   ctaImage: {
-    width: 100,
-    height: 100,
+    position: 'absolute',
+    bottom: -10,
+    right: -10,
+    width: 90,
+    height: 90,
+    opacity: 0.9,
   },
   ctaIconWrapper: {
     width: 80,
