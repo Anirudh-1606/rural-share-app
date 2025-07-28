@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 import {
   View,
   StyleSheet,
@@ -42,7 +44,7 @@ interface SubCategory {
 }
 
 interface ListingFormData {
-  providerId: string;
+  providerId: string | undefined;
   title: string;
   description: string;
   categoryId: string;
@@ -86,9 +88,15 @@ const CreateListingScreen = () => {
  
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableSubCategories, setAvailableSubCategories] = useState<SubCategory[]>([]);
+
+
+  //Get the user id from the redux store
+  const user = useSelector((state: RootState) => state.auth.user);
+  const userId = user?._id;
+
   
   const [formData, setFormData] = useState<ListingFormData>({
-    providerId: '687b5692b9434ec2d0e7adc9', // Hardcoded for now
+    providerId: userId,
     title: '',
     description: '',
     categoryId: '',
@@ -226,7 +234,7 @@ const CreateListingScreen = () => {
       
       // Create payload matching API structure
       const payload = {
-        providerId: "687b5692b9434ec2d0e7adc9", // Hardcoded as requested
+        providerId: formData.providerId, // This is the user id
         title: formData.title,
         description: formData.description,
         categoryId: formData.categoryId,
