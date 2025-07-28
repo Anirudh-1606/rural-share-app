@@ -48,15 +48,26 @@ export default function BottomTabNavigator() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
+<<<<<<< HEAD
           position: 'relative',
           bottom: 16,
           left: 16,
           right: 16,
           height: 60,
           borderRadius: BORDER_RADIUS.XL || 30,
+=======
+          position: 'absolute',
+          bottom: 0,    // Flush with bottom
+          left: 0,      // Full width
+          right: 0,     // Full width
+          height: 75,
+          borderTopLeftRadius: BORDER_RADIUS.XL || 30,   // Only top corners rounded
+          borderTopRightRadius: BORDER_RADIUS.XL || 30,  // Only top corners rounded
+>>>>>>> 2449c095e3bda9684533562c3edc214fa459dda3
           backgroundColor: COLORS.BACKGROUND.NAV,
           paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           paddingTop: 12,
+          
           ...SHADOWS.MD,
           borderTopWidth: 0,
           elevation: 8,

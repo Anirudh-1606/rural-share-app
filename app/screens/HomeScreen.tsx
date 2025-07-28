@@ -19,6 +19,8 @@ import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
 import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
 import CatalogueService from '../services/CatalogueService';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 import categoryIcons from '../utils/icons';
 
@@ -28,7 +30,8 @@ const tractorIcon = require('../assets/tractor.png');
 const ploughingIcon = require('../assets/plough.png');
 const seedSowingIcon = require('../assets/seed.png');
 const dripIrrigationIcon = require('../assets/drip.png');
-const harvestIcon = require('../assets/harvest.png');
+const mechanicalIcon = require('../assets/mechanical.png');
+const farmerIcon = require('../assets/farmer.png');
 const backgroundImg = require('../assets/provider-bg.png');
 
 const exploreItems = [
@@ -83,6 +86,9 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
+  
+  // Get date range from Redux
+  const dateRange = useSelector((state: RootState) => state.dateRange);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -122,6 +128,42 @@ export default function HomeScreen() {
     extrapolate: 'clamp',
   });
 
+  // Handle search submission
+  const handleSearch = () => {
+    navigation.navigate('SearchResults', {
+      searchQuery: searchText,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
+  // Handle category selection
+  const handleCategoryPress = (category: Category) => {
+    navigation.navigate('SearchResults', {
+      searchQuery: category.name,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
+  // Handle search bar tap
+  const handleSearchBarPress = () => {
+    navigation.navigate('SearchResults', {
+      searchQuery: searchText,
+      location: currentLocation,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
+    });
+  };
+
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1 }}>
       <Image source={backgroundImg} style={styles.backgroundImage} resizeMode="cover" />
@@ -133,6 +175,12 @@ export default function HomeScreen() {
       >
         <Animated.View style={[styles.headerContainer, { height: headerHeightAnim }]}>
           <View style={styles.headerBackground} />
+          
+          {/* Light Green Circles Pattern */}
+          <View style={styles.headerCircle1} />
+          <View style={styles.headerCircle2} />
+          <View style={styles.headerCircle3} />
+          
           <View style={styles.headerContent}>
             <View style={styles.headerTop}>
               <View style={styles.locationWrapper}>
@@ -154,7 +202,11 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
-          <View style={styles.searchBar}>
+          <TouchableOpacity 
+            style={styles.searchBar}
+            onPress={handleSearchBarPress}
+            activeOpacity={0.95}
+          >
             <Ionicons name="search" size={20} color="#94a3b8" />
             <TextInput
               value={searchText}
@@ -162,6 +214,8 @@ export default function HomeScreen() {
               placeholder=" "
               placeholderTextColor="#94a3b8"
               style={styles.searchInput}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
             />
             {!searchText && (
               <View style={styles.animatedPlaceholderContainer}>
@@ -171,10 +225,10 @@ export default function HomeScreen() {
                 </Animated.Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         </Animated.View>
 
-        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT + SPACING.MD }]}>
+        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT}]}>
           <Text style={styles.sectionTitle}>Browse by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScrollContent}>
             {categories.slice(0, 4).map(category => (
@@ -197,7 +251,7 @@ export default function HomeScreen() {
                 onPress={() => navigation.navigate('CategoryBrowser')}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Ionicons name="ellipsis-horizontal-circle-outline" size={45} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="ellipsis-horizontal-circle-outline" size={50} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.serviceLabel}>More</Text>
               </TouchableOpacity>
@@ -205,35 +259,34 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.ctaSection}>
+       <View style={styles.ctaSection}>
+        <Text style={styles.quickServicesTitle}>Quick Services</Text>
+        <View style={styles.ctaCardsRow}>
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need mechanical services?</Text>
-              <Text style={styles.ctaSubtitle}>At your ease</Text>
+              <Text style={styles.ctaTitle}>Need mechanical{'\n'}help?</Text>
+              <Text style={styles.ctaSubtitle}>Find nearby{'\n'}tractor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
-                <Text style={styles.ctaButtonText}>Check Now</Text>
+                <Text style={styles.ctaButtonText}>Explore</Text>
                 <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
-            <View style={styles.ctaImageWrapper}>
-              <Image source={harvestIcon} style={styles.ctaImage} resizeMode="contain" />
-            </View>
+            <Image source={mechanicalIcon} style={styles.ctaImage} resizeMode="contain" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need human resources?</Text>
-              <Text style={styles.ctaSubtitle}>Find workers nearby</Text>
+              <Text style={styles.ctaTitle}>Need workers?</Text>
+              <Text style={styles.ctaSubtitle}>Hire farm labor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
-                <Text style={styles.ctaButtonText}>Check Now</Text>
-                <Ionicons name="people" size={16} color={COLORS.PRIMARY.MAIN} />
+                <Text style={styles.ctaButtonText}>Explore</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />
               </TouchableOpacity>
             </View>
-            <View style={styles.ctaIconWrapper}>
-              <Ionicons name="people" size={60} color={COLORS.PRIMARY.MAIN} />
-            </View>
+            <Image source={farmerIcon} style={styles.ctaImage} resizeMode="contain" />
           </TouchableOpacity>
         </View>
+      </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -249,7 +302,7 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 75,
     left: 0,
     right: 0,
     width: '100%',
@@ -261,6 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY.MAIN,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
+    overflow: 'hidden',
   },
   headerBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -269,9 +323,39 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 14,
     overflow: 'hidden',
   },
+  // Light Green Circle Patterns
+  headerCircle1: {
+    position: 'absolute',
+    right: -80,
+    top: -40,
+    width: 250,
+    height: 250,
+    backgroundColor: 'rgba(144, 238, 144, 0.15)', // Light green with transparency
+    borderRadius: 125,
+  },
+  headerCircle2: {
+    position: 'absolute',
+    left: -100,
+    top: 50,
+    width: 200,
+    height: 200,
+    backgroundColor: 'rgba(152, 251, 152, 0.1)', // Another shade of light green
+    borderRadius: 100,
+  },
+  headerCircle3: {
+    position: 'absolute',
+    right: 40,
+    bottom: -60,
+    width: 150,
+    height: 150,
+    backgroundColor: 'rgba(144, 238, 144, 0.12)', // Light green
+    borderRadius: 75,
+  },
   headerContent: {
     paddingHorizontal: SPACING.MD,
     paddingTop: Platform.OS === 'ios' ? SPACING.MD : SPACING.LG,
+    position: 'relative',
+    zIndex: 1,
   },
   headerTop: {
     flexDirection: 'row',
@@ -349,17 +433,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.MD,
   },
   servicesScrollContent: {
-    paddingRight: SPACING.MD,
+    paddingRight: SPACING.SM,
   },
   serviceCard: {
     alignItems: 'center',
     marginRight: SPACING.LG,
   },
   serviceIconWrapper: {
-    width: 80,
-    height: 80,
+    width: 75,
+    height: 75,
     borderRadius: BORDER_RADIUS.XL,
-    backgroundColor: COLORS.NEUTRAL.GRAY[100],
+    backgroundColor: COLORS.SECONDARY.LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.SM,
@@ -379,32 +463,44 @@ const styles = StyleSheet.create({
   ctaSection: {
     paddingHorizontal: SPACING.MD,
     marginTop: SPACING.XL,
+  },
+  quickServicesTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
+    marginBottom: SPACING.MD,
+  },
+  ctaCardsRow: {
+    flexDirection: 'row',
     gap: SPACING.MD,
   },
   ctaCard: {
+    flex: 1,
     backgroundColor: 'white',
     borderRadius: BORDER_RADIUS.XL,
     padding: SPACING.LG,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...SHADOWS.MD,
+    minHeight: 160,
+    position: 'relative',
     overflow: 'hidden',
+    ...SHADOWS.MD,
   },
   ctaContent: {
     flex: 1,
+    zIndex: 1,
   },
   ctaTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FONTS.POPPINS.BOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
-    lineHeight: 26,
+    lineHeight: 22,
   },
   ctaSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.SECONDARY,
     marginBottom: SPACING.MD,
+    lineHeight: 18,
   },
   ctaButton: {
     backgroundColor: COLORS.SECONDARY.LIGHT,
@@ -421,10 +517,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.PRIMARY.MAIN,
   },
-  ctaImageWrapper: {},
   ctaImage: {
-    width: 100,
-    height: 100,
+    position: 'absolute',
+    bottom: -10,
+    right: -10,
+    width: 90,
+    height: 90,
+    opacity: 0.9,
   },
   ctaIconWrapper: {
     width: 80,
