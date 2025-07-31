@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000/api'; // Replace with actual base URL
+import { API_BASE_URL } from '../config/api';
+
+const BASE_URL = API_BASE_URL;
 
 export interface CreateListingPayload {
   providerId: string;
@@ -37,12 +39,15 @@ export interface Listing extends CreateListingPayload {
 
 class ListingService {
   // Create a new listing
-  async createListing(payload: CreateListingPayload): Promise<Listing> {
+  async createListing(payload: CreateListingPayload, token: string): Promise<Listing> {
     try {
-      const response = await axios.post(`${BASE_URL}/listings`, payload);
+      const response = await axios.post(`${BASE_URL}/listings`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       return response.data;
-    } catch (error) {
-      console.error('Error creating listing:', error);
+    } catch (error: any) {
       throw error;
     }
   }

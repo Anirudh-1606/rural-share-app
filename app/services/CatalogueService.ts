@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_CONFIG } from '../config/api';
 
-const BASE_URL = 'http://localhost:3000/api' // Replace with actual base URL
+const BASE_URL = API_CONFIG.development.android + '/api' // Replace with actual base URL
 
 interface Category {
   _id: string;
