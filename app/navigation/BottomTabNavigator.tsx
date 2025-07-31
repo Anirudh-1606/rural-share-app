@@ -4,11 +4,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen';
-import ProviderScreen from '../screens/ProviderScreen';
+import ProviderNavigator from './ProviderNavigator';
 import Text from '../components/Text'; // Custom Text component
 import { COLORS, BORDER_RADIUS, SHADOWS } from '../utils'; // Your theme constants
 
+import ProfileScreen from '../screens/ProfileScreen';
+
 const Tab = createBottomTabNavigator();
+
+
+
 
 function PlaceholderScreen({ label }: { label: string }) {
   return <Text style={{ flex: 1, textAlign: 'center', marginTop: 100 }}>{label} Screen</Text>;
@@ -125,7 +130,7 @@ export default function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Seeker" component={HomeScreen} />
-      <Tab.Screen name="Provider" component={ProviderScreen} />
+      <Tab.Screen name="Provider" component={ProviderNavigator} />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
     </Tab.Navigator>

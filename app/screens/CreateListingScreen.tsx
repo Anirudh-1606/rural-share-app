@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
+import { checkAuth } from '../store/slices/authSlice';
 import {
   View,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
@@ -41,44 +43,52 @@ interface SubCategory {
   name: string;
   categoryId: string;
   description?: string;
+  defaultUnitOfMeasure?: string;
+  suggestedMinPrice?: number;
+  suggestedMaxPrice?: number;
 }
 
 interface ListingFormData {
-  providerId: string | undefined;
+  providerId: string;
   title: string;
   description: string;
   categoryId: string;
   subCategoryId: string;
   photos: string[];
-  location: {
-    address: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
+  videoUrl?: string;
+  coordinates: [number, number]; // [longitude, latitude]
   price: string;
   unitOfMeasure: string;
   minimumOrder: string;
   availableFrom: Date;
   availableTo: Date;
   tags: string[];
+  termsAndConditions?: string;
+  locationAddress: string; // To store the address string
 }
 
-// Icon mapping for categories
+// Icon mapping for categories (from existing assets/Icons/Categories and general assets)
 const iconMapping: { [key: string]: string } = {
-  'farm_machinery': 'construct-outline',
-  'specialist': 'person-outline',
-  'tools': 'hammer-outline',
-  'storage': 'cube-outline',
+  'tractor': 'build-outline', // Example, adjust to actual Ionicons
+  'water-pump': 'water-outline',
+  'processor': 'cog-outline',
+  'farmer': 'person-outline',
+  'construction': 'construct-outline',
+  'specialist': 'briefcase-outline',
+  'seed-drill': 'leaf-outline',
+  'harvester': 'cut-outline',
+  'plough': 'git-pull-request-outline',
+  'drip': 'water-outline',
+  'bin': 'cube-outline',
+  'carpenter': 'hammer-outline',
+  'electrician': 'flash-outline',
   'event': 'calendar-outline',
-  'produce': 'leaf-outline',
-  'transport': 'car-outline',
   'default': 'ellipse-outline'
 };
 
 const CreateListingScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
@@ -88,44 +98,55 @@ const CreateListingScreen = () => {
  
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableSubCategories, setAvailableSubCategories] = useState<SubCategory[]>([]);
+  const [isDataReady, setIsDataReady] = useState(false); // New state for data readiness
 
+  const { user, isLoading: isAuthLoading, token } = useSelector((state: RootState) => state.auth);
 
-  //Get the user id from the redux store
-  const user = useSelector((state: RootState) => state.auth.user);
-  const userId = user?._id;
-
-  
   const [formData, setFormData] = useState<ListingFormData>({
-    providerId: userId,
     title: '',
     description: '',
     categoryId: '',
     subCategoryId: '',
     photos: [],
-    location: {
-      address: '',
-      coordinates: {
-        lat: 18.0534,
-        lng: 78.1134,
-      },
-    },
+    coordinates: [78.1134, 18.0534], // Default to a central India location (longitude, latitude)
     price: '',
     unitOfMeasure: 'per_hour',
     minimumOrder: '1',
     availableFrom: new Date(),
     availableTo: new Date(new Date().setMonth(new Date().getMonth() + 6)),
     tags: [],
+    locationAddress: '',
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const initializeData = async () => {
+      if (user?.id) {
+        setFormData(prev => ({ ...prev, providerId: user.id }));
+        try {
+          setLoading(true);
+          const categories = await CatalogueService.getCategories();
+          setAvailableCategories(categories);
+          setIsDataReady(true); // Set data ready after categories are fetched
+        } catch (error) {
+          console.error('Error initializing data:', error);
+          Alert.alert('Error', 'Failed to load initial data. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setIsDataReady(false);
+      }
+    };
+
+    initializeData();
+  }, [user]); // Depend on user to re-run when user data becomes available
+
+  console.log('CreateListingScreen: Before conditional render. isDataReady:', isDataReady);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
       const categories = await CatalogueService.getCategories();
-      console.log('Fetched categories:', categories);
       setAvailableCategories(categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -139,7 +160,6 @@ const CreateListingScreen = () => {
     try {
       setLoading(true);
       const subCategories = await CatalogueService.getSubCategories(categoryId);
-      console.log('Fetched subcategories:', subCategories);
       setAvailableSubCategories(subCategories);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
@@ -150,9 +170,18 @@ const CreateListingScreen = () => {
   };
 
   const handleCategorySelect = async (categoryId: string) => {
-    handleInputChange('categoryId', categoryId);
-    handleInputChange('subCategoryId', ''); // Reset subcategory
+    setFormData(prev => ({ ...prev, categoryId, subCategoryId: '' })); // Reset subcategory
     await fetchSubCategories(categoryId);
+  };
+
+  const handleSubCategorySelect = (subCategoryId: string) => {
+    const selectedSub = availableSubCategories.find(sub => sub._id === subCategoryId);
+    setFormData(prev => ({
+      ...prev,
+      subCategoryId,
+      unitOfMeasure: selectedSub?.defaultUnitOfMeasure || 'per_hour',
+      price: selectedSub?.suggestedMinPrice?.toString() || '',
+    }));
   };
 
   const unitOptions = [
@@ -161,26 +190,21 @@ const CreateListingScreen = () => {
     { value: 'per_hectare', label: 'Per Hectare' },
     { value: 'per_kg', label: 'Per Kg' },
     { value: 'per_unit', label: 'Per Unit' },
+    { value: 'per_piece', label: 'Per Piece' },
   ];
 
-  const handleInputChange = (field: string, value: any) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof ListingFormData],
-          [child]: value,
-        },
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    }
+  const handleInputChange = (field: keyof ListingFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleAddPhoto = () => {
     // TODO: Implement photo picker
     Alert.alert('Photo Picker', 'Photo picker will be implemented');
+    // For now, add a placeholder photo
+    setFormData(prev => ({
+      ...prev,
+      photos: [...prev.photos, `https://picsum.photos/200/300?random=${Math.random()}`],
+    }));
   };
 
   const handleAddTag = (tag: string) => {
@@ -198,12 +222,30 @@ const CreateListingScreen = () => {
 
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 1:
-        return formData.title.length > 0 && formData.description.length > 0;
-      case 2:
-        return formData.categoryId.length > 0 && formData.subCategoryId.length > 0;
-      case 3:
-        return formData.price.length > 0 && parseFloat(formData.price) > 0;
+      case 1: // Basic Information
+        if (!formData.title.trim() || !formData.description.trim() || !formData.locationAddress.trim()) {
+          Alert.alert('Validation Error', 'Please fill in Title, Description, and Location.');
+          return false;
+        }
+        return true;
+      case 2: // Category Selection
+        if (!formData.categoryId || !formData.subCategoryId) {
+          Alert.alert('Validation Error', 'Please select both a Category and a Subcategory.');
+          return false;
+        }
+        return true;
+      case 3: // Pricing & Availability
+        if (!formData.price || parseFloat(formData.price) <= 0 || !formData.unitOfMeasure || !formData.minimumOrder || parseInt(formData.minimumOrder) <= 0) {
+          Alert.alert('Validation Error', 'Please enter a valid Price, Unit, and Minimum Order.');
+          return false;
+        }
+        if (formData.availableFrom > formData.availableTo) {
+          Alert.alert('Validation Error', 'Available From date cannot be after Available To date.');
+          return false;
+        }
+        return true;
+      case 4: // Photos & Tags
+        return true;
       default:
         return true;
     }
@@ -216,48 +258,45 @@ const CreateListingScreen = () => {
       } else {
         handleSubmit();
       }
-    } else {
-      Alert.alert('Validation Error', 'Please fill all required fields');
     }
   };
 
   const formatDateForAPI = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return date.toISOString(); // ISO 8601 format
   };
 
   const handleSubmit = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'Could not find user information. Please try logging in again.');
+      return;
+    }
+
     try {
       setLoading(true);
       
-      // Create payload matching API structure
       const payload = {
-        providerId: formData.providerId, // This is the user id
+        providerId: user.id,
         title: formData.title,
         description: formData.description,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
-        photos: formData.photos.length > 0 ? formData.photos : [
-          "https://example.com/placeholder1.jpg",
-          "https://example.com/placeholder2.jpg"
-        ],
-        coordinates: [formData.location.coordinates.lng, formData.location.coordinates.lat],
+        photos: formData.photos,
+        coordinates: formData.coordinates,
         price: parseFloat(formData.price),
         unitOfMeasure: formData.unitOfMeasure,
         minimumOrder: parseInt(formData.minimumOrder),
         availableFrom: formatDateForAPI(formData.availableFrom),
         availableTo: formatDateForAPI(formData.availableTo),
         tags: formData.tags,
-        isActive: true
+        isActive: true,
+        viewCount: 0,
+        bookingCount: 0,
+        isVerified: false,
+        // termsAndConditions: formData.termsAndConditions, // Optional
+        // videoUrl: formData.videoUrl, // Optional
       };
 
-      console.log('Listing payload:', payload);
-      
-      // TODO: Uncomment when API is ready
-      const response = await ListingService.createListing(payload);
-      console.log('Listing created:', response);
+      const response = await ListingService.createListing(payload, token);
       
       Alert.alert('Success', 'Listing created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -333,13 +372,13 @@ const CreateListingScreen = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Location</Text>
+        <Text style={styles.inputLabel}>Location Address *</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="Enter service location"
+          placeholder="Enter service location address"
           placeholderTextColor="#9CA3AF"
-          value={formData.location.address}
-          onChangeText={(text) => handleInputChange('location.address', text)}
+          value={formData.locationAddress}
+          onChangeText={(text) => handleInputChange('locationAddress', text)}
         />
       </View>
     </View>
@@ -399,7 +438,7 @@ const CreateListingScreen = () => {
                     styles.subCategoryChip,
                     formData.subCategoryId === sub._id && styles.subCategoryChipActive,
                   ]}
-                  onPress={() => handleInputChange('subCategoryId', sub._id)}
+                  onPress={() => handleSubCategorySelect(sub._id)}
                 >
                   <Text
                     style={[
@@ -439,13 +478,13 @@ const CreateListingScreen = () => {
         </View>
 
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
-          <Text style={styles.inputLabel}>Unit</Text>
+          <Text style={styles.inputLabel}>Unit *</Text>
           <TouchableOpacity 
             style={styles.dropdown}
             onPress={() => setShowUnitDropdown(!showUnitDropdown)}
           >
             <Text style={styles.dropdownText}>
-              {unitOptions.find(u => u.value === formData.unitOfMeasure)?.label}
+              {unitOptions.find(u => u.value === formData.unitOfMeasure)?.label || 'Select Unit'}
             </Text>
             <Ionicons name="chevron-down" size={20} color="#6B7280" />
           </TouchableOpacity>
@@ -470,7 +509,7 @@ const CreateListingScreen = () => {
       )}
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Minimum Order</Text>
+        <Text style={styles.inputLabel}>Minimum Order *</Text>
         <TextInput
           style={styles.textInput}
           placeholder="1"
@@ -482,7 +521,7 @@ const CreateListingScreen = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Available From</Text>
+        <Text style={styles.inputLabel}>Available From *</Text>
         <TouchableOpacity
           style={styles.dateInput}
           onPress={() => setShowFromDatePicker(true)}
@@ -490,19 +529,6 @@ const CreateListingScreen = () => {
           <Ionicons name="calendar-outline" size={20} color="#6B7280" />
           <Text style={styles.dateText}>
             {formData.availableFrom.toLocaleDateString()}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Available To</Text>
-        <TouchableOpacity
-          style={styles.dateInput}
-          onPress={() => setShowToDatePicker(true)}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-          <Text style={styles.dateText}>
-            {formData.availableTo.toLocaleDateString()}
           </Text>
         </TouchableOpacity>
       </View>
@@ -518,6 +544,19 @@ const CreateListingScreen = () => {
           }}
         />
       )}
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Available To *</Text>
+        <TouchableOpacity
+          style={styles.dateInput}
+          onPress={() => setShowToDatePicker(true)}
+        >
+          <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+          <Text style={styles.dateText}>
+            {formData.availableTo.toLocaleDateString()}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {showToDatePicker && (
         <DateTimePicker
@@ -539,7 +578,7 @@ const CreateListingScreen = () => {
       <Text style={styles.stepSubtitle}>Add photos and tags to attract more customers</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Photos</Text>
+        <Text style={styles.inputLabel}>Photos *</Text>
         <TouchableOpacity style={styles.photoUploadBox} onPress={handleAddPhoto}>
           <Ionicons name="camera-outline" size={32} color="#6B7280" />
           <Text style={styles.photoUploadText}>Add Photos</Text>
@@ -598,6 +637,19 @@ const CreateListingScreen = () => {
     </View>
   );
 
+  
+
+  if (!isDataReady) {
+    return (
+      <SafeAreaWrapper backgroundColor="#f5f5f5">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY.MAIN} />
+          <Text>Loading data...</Text>
+        </View>
+      </SafeAreaWrapper>
+    );
+  }
+
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5">
       <KeyboardAvoidingView
@@ -654,6 +706,11 @@ const CreateListingScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
