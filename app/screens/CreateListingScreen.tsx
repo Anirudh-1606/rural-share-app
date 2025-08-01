@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { checkAuth } from '../store/slices/authSlice';
 import {
   View,
   StyleSheet,
@@ -22,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CatalogueService from '../services/CatalogueService';
 import ListingService from '../services/ListingService';
+import categoryIcons from '../utils/icons';
 
 interface Category {
   _id: string;
@@ -54,6 +54,7 @@ interface ListingFormData {
   description: string;
   categoryId: string;
   subCategoryId: string;
+  subCategorySelected: boolean;
   photos: string[];
   videoUrl?: string;
   coordinates: [number, number]; // [longitude, latitude]
@@ -67,29 +68,10 @@ interface ListingFormData {
   locationAddress: string; // To store the address string
 }
 
-// Icon mapping for categories (from existing assets/Icons/Categories and general assets)
-const iconMapping: { [key: string]: string } = {
-  'tractor': 'build-outline', // Example, adjust to actual Ionicons
-  'water-pump': 'water-outline',
-  'processor': 'cog-outline',
-  'farmer': 'person-outline',
-  'construction': 'construct-outline',
-  'specialist': 'briefcase-outline',
-  'seed-drill': 'leaf-outline',
-  'harvester': 'cut-outline',
-  'plough': 'git-pull-request-outline',
-  'drip': 'water-outline',
-  'bin': 'cube-outline',
-  'carpenter': 'hammer-outline',
-  'electrician': 'flash-outline',
-  'event': 'calendar-outline',
-  'default': 'ellipse-outline'
-};
 
 const CreateListingScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,15 +80,17 @@ const CreateListingScreen = () => {
  
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableSubCategories, setAvailableSubCategories] = useState<SubCategory[]>([]);
-  const [isDataReady, setIsDataReady] = useState(false); // New state for data readiness
+  const [isDataReady, setIsDataReady] = useState(false);
 
-  const { user, isLoading: isAuthLoading, token } = useSelector((state: RootState) => state.auth);
+  const { user, token } = useSelector((state: RootState) => state.auth);
 
   const [formData, setFormData] = useState<ListingFormData>({
+    providerId: '',
     title: '',
     description: '',
     categoryId: '',
     subCategoryId: '',
+    subCategorySelected: false,
     photos: [],
     coordinates: [78.1134, 18.0534], // Default to a central India location (longitude, latitude)
     price: '',
@@ -126,7 +110,7 @@ const CreateListingScreen = () => {
           setLoading(true);
           const categories = await CatalogueService.getCategories();
           setAvailableCategories(categories);
-          setIsDataReady(true); // Set data ready after categories are fetched
+          setIsDataReady(true);
         } catch (error) {
           console.error('Error initializing data:', error);
           Alert.alert('Error', 'Failed to load initial data. Please try again.');
@@ -139,22 +123,7 @@ const CreateListingScreen = () => {
     };
 
     initializeData();
-  }, [user]); // Depend on user to re-run when user data becomes available
-
-  console.log('CreateListingScreen: Before conditional render. isDataReady:', isDataReady);
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const categories = await CatalogueService.getCategories();
-      setAvailableCategories(categories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      Alert.alert('Error', 'Failed to load categories. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user]);
 
   const fetchSubCategories = async (categoryId: string) => {
     try {
@@ -170,7 +139,12 @@ const CreateListingScreen = () => {
   };
 
   const handleCategorySelect = async (categoryId: string) => {
-    setFormData(prev => ({ ...prev, categoryId, subCategoryId: '' })); // Reset subcategory
+    setFormData(prev => ({
+      ...prev,
+      categoryId,
+      subCategoryId: '',
+      subCategorySelected: false,
+    }));
     await fetchSubCategories(categoryId);
   };
 
@@ -181,6 +155,7 @@ const CreateListingScreen = () => {
       subCategoryId,
       unitOfMeasure: selectedSub?.defaultUnitOfMeasure || 'per_hour',
       price: selectedSub?.suggestedMinPrice?.toString() || '',
+      subCategorySelected: true,
     }));
   };
 
@@ -198,9 +173,7 @@ const CreateListingScreen = () => {
   };
 
   const handleAddPhoto = () => {
-    // TODO: Implement photo picker
     Alert.alert('Photo Picker', 'Photo picker will be implemented');
-    // For now, add a placeholder photo
     setFormData(prev => ({
       ...prev,
       photos: [...prev.photos, `https://picsum.photos/200/300?random=${Math.random()}`],
@@ -222,19 +195,19 @@ const CreateListingScreen = () => {
 
   const validateStep = (step: number): boolean => {
     switch (step) {
+      case 0: // Category Selection
+        if (!formData.categoryId || !formData.subCategorySelected) {
+          Alert.alert('Validation Error', 'Please select both a Category and a Subcategory.');
+          return false;
+        }
+        return true;
       case 1: // Basic Information
         if (!formData.title.trim() || !formData.description.trim() || !formData.locationAddress.trim()) {
           Alert.alert('Validation Error', 'Please fill in Title, Description, and Location.');
           return false;
         }
         return true;
-      case 2: // Category Selection
-        if (!formData.categoryId || !formData.subCategoryId) {
-          Alert.alert('Validation Error', 'Please select both a Category and a Subcategory.');
-          return false;
-        }
-        return true;
-      case 3: // Pricing & Availability
+      case 2: // Pricing & Availability
         if (!formData.price || parseFloat(formData.price) <= 0 || !formData.unitOfMeasure || !formData.minimumOrder || parseInt(formData.minimumOrder) <= 0) {
           Alert.alert('Validation Error', 'Please enter a valid Price, Unit, and Minimum Order.');
           return false;
@@ -244,7 +217,7 @@ const CreateListingScreen = () => {
           return false;
         }
         return true;
-      case 4: // Photos & Tags
+      case 3: // Photos & Tags
         return true;
       default:
         return true;
@@ -253,7 +226,7 @@ const CreateListingScreen = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 4) {
+      if (currentStep < 3) {
         setCurrentStep(currentStep + 1);
       } else {
         handleSubmit();
@@ -262,7 +235,7 @@ const CreateListingScreen = () => {
   };
 
   const formatDateForAPI = (date: Date): string => {
-    return date.toISOString(); // ISO 8601 format
+    return date.toISOString();
   };
 
   const handleSubmit = async () => {
@@ -292,11 +265,9 @@ const CreateListingScreen = () => {
         viewCount: 0,
         bookingCount: 0,
         isVerified: false,
-        // termsAndConditions: formData.termsAndConditions, // Optional
-        // videoUrl: formData.videoUrl, // Optional
       };
 
-      const response = await ListingService.createListing(payload, token);
+      await ListingService.createListing(payload, token);
       
       Alert.alert('Success', 'Listing created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -311,7 +282,7 @@ const CreateListingScreen = () => {
 
   const renderStepIndicator = () => (
     <View style={styles.stepIndicator}>
-      {[1, 2, 3, 4].map((step) => (
+      {[0, 1, 2, 3].map((step) => (
         <View key={step} style={styles.stepContainer}>
           <View
             style={[
@@ -325,10 +296,10 @@ const CreateListingScreen = () => {
                 currentStep >= step && styles.stepNumberActive,
               ]}
             >
-              {step}
+              {step + 1}
             </Text>
           </View>
-          {step < 4 && (
+          {step < 3 && (
             <View
               style={[
                 styles.stepLine,
@@ -338,6 +309,76 @@ const CreateListingScreen = () => {
           )}
         </View>
       ))}
+    </View>
+  );
+
+  const renderStep0 = () => (
+    <View style={styles.stepContent}>
+      <Text style={styles.stepTitle}>Category Selection</Text>
+      <Text style={styles.stepSubtitle}>Choose the right category for your service</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Category *</Text>
+        {loading && availableCategories.length === 0 && <Text style={styles.loadingText}>Loading categories...</Text>}
+        <View style={styles.categoryGrid}>
+          {availableCategories.map((category) => (
+            <TouchableOpacity
+              key={category._id}
+              style={[
+                styles.categoryCard,
+                formData.categoryId === category._id && styles.categoryCardActive,
+              ]}
+              onPress={() => handleCategorySelect(category._id)}
+            >
+              <Image
+                source={categoryIcons[category.icon] || categoryIcons['tools']}
+                style={styles.categoryIcon}
+              />
+              <Text
+                style={[
+                  styles.categoryText,
+                  formData.categoryId === category._id && styles.categoryTextActive,
+                ]}
+                numberOfLines={2}
+              >
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {formData.categoryId && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Subcategory *</Text>
+          {loading && availableSubCategories.length === 0 && <Text style={styles.loadingText}>Loading subcategories...</Text>}
+          {availableSubCategories.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {availableSubCategories.map((sub) => (
+                <TouchableOpacity
+                  key={sub._id}
+                  style={[
+                    styles.subCategoryChip,
+                    formData.subCategoryId === sub._id && styles.subCategoryChipActive,
+                  ]}
+                  onPress={() => handleSubCategorySelect(sub._id)}
+                >
+                  <Text
+                    style={[
+                      styles.subCategoryText,
+                      formData.subCategoryId === sub._id && styles.subCategoryTextActive,
+                    ]}
+                  >
+                    {sub.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            !loading && <Text style={styles.noDataText}>No subcategories available for this category</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 
@@ -385,81 +426,6 @@ const CreateListingScreen = () => {
   );
 
   const renderStep2 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Category Selection</Text>
-      <Text style={styles.stepSubtitle}>Choose the right category for your service</Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Category *</Text>
-        {loading && <Text style={styles.loadingText}>Loading categories...</Text>}
-        <View style={styles.categoryGrid}>
-          {availableCategories.map((category) => (
-            <TouchableOpacity
-              key={category._id}
-              style={[
-                styles.categoryCard,
-                formData.categoryId === category._id && styles.categoryCardActive,
-              ]}
-              onPress={() => handleCategorySelect(category._id)}
-            >
-              <Ionicons
-                name={iconMapping[category.icon] || iconMapping.default}
-                size={28}
-                color={
-                  formData.categoryId === category._id
-                    ? COLORS.PRIMARY.MAIN
-                    : '#6B7280'
-                }
-              />
-              <Text
-                style={[
-                  styles.categoryText,
-                  formData.categoryId === category._id && styles.categoryTextActive,
-                ]}
-                numberOfLines={2}
-              >
-                {category.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {formData.categoryId && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Subcategory *</Text>
-          {loading && <Text style={styles.loadingText}>Loading subcategories...</Text>}
-          {availableSubCategories.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {availableSubCategories.map((sub) => (
-                <TouchableOpacity
-                  key={sub._id}
-                  style={[
-                    styles.subCategoryChip,
-                    formData.subCategoryId === sub._id && styles.subCategoryChipActive,
-                  ]}
-                  onPress={() => handleSubCategorySelect(sub._id)}
-                >
-                  <Text
-                    style={[
-                      styles.subCategoryText,
-                      formData.subCategoryId === sub._id && styles.subCategoryTextActive,
-                    ]}
-                  >
-                    {sub.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={styles.noDataText}>No subcategories available for this category</Text>
-          )}
-        </View>
-      )}
-    </View>
-  );
-
-  const renderStep3 = () => (
     <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>Pricing & Availability</Text>
       <Text style={styles.stepSubtitle}>Set your pricing and availability</Text>
@@ -572,7 +538,7 @@ const CreateListingScreen = () => {
     </View>
   );
 
-  const renderStep4 = () => (
+  const renderStep3 = () => (
     <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>Photos & Tags</Text>
       <Text style={styles.stepSubtitle}>Add photos and tags to attract more customers</Text>
@@ -631,13 +597,10 @@ const CreateListingScreen = () => {
                 <Ionicons name="close-circle" size={18} color="#6B7280" />
               </TouchableOpacity>
             </View>
-          ))}
-        </View>
+          ))}</View>
       </View>
     </View>
   );
-
-  
 
   if (!isDataReady) {
     return (
@@ -656,56 +619,65 @@ const CreateListingScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create New Listing</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        {/* Step Indicator */}
-        {renderStepIndicator()}
-
-        {/* Form Content */}
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
-
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            {currentStep > 1 && (
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => setCurrentStep(currentStep - 1)}
-              >
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[styles.primaryButton, currentStep === 1 && { flex: 1 }]}
-              onPress={handleNext}
-              disabled={loading}
-            >
-              <Text style={styles.primaryButtonText}>
-                {currentStep === 4 ? 'Create Listing' : 'Next'}
-              </Text>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
             </TouchableOpacity>
+            <Text style={styles.headerTitle}>Create New Listing</Text>
+            <View style={{ width: 40 }} />
           </View>
-        </ScrollView>
+
+          {renderStepIndicator()}
+
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {currentStep === 0 && renderStep0()}
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            <View 
+            style={styles.actionButtons}
+          >
+              {currentStep > 0 && (
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => setCurrentStep(currentStep - 1)}
+                >
+                  <Text style={styles.secondaryButtonText}>Back</Text>
+                </TouchableOpacity>
+              )}
+              {((currentStep > 0) || (formData.categoryId && formData.subCategorySelected)) && (
+                <TouchableOpacity
+                  style={[
+                    styles.primaryButton,
+                    currentStep === 0 && { flex: 1 },
+                  ]}
+                  onPress={handleNext}
+                  disabled={loading}
+                >
+                  <Text style={styles.primaryButtonText}>
+                    {currentStep === 3 ? 'Create Listing' : 'Next'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+          </View>
+          </ScrollView>
+
+          
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -773,9 +745,13 @@ const styles = StyleSheet.create({
   stepLineActive: {
     backgroundColor: COLORS.PRIMARY.DARK,
   },
+  scrollView: {
+    marginBottom: 50,
+    flex: 1,
+  },
+ 
   scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 100,
+    paddingBottom: 20, // Ensures content doesn't hide behind the button bar
   },
   stepContent: {
     padding: 20,
@@ -836,11 +812,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.PRIMARY.MAIN,
     backgroundColor: COLORS.PRIMARY.LIGHT,
   },
+  categoryIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
+    marginBottom: 8,
+  },
   categoryText: {
     fontSize: 13,
     fontFamily: FONTS.POPPINS.MEDIUM,
     color: '#6B7280',
-    marginTop: 8,
     textAlign: 'center',
   },
   categoryTextActive: {
@@ -998,6 +979,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     gap: 12,
+    backgroundColor: '#f5f5f5',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   primaryButton: {
     flex: 1,
