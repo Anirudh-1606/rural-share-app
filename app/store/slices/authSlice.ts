@@ -32,7 +32,8 @@ interface User {
 interface AuthState {
   // Authentication status
   isAuthenticated: boolean;
-  user: User | null;
+  user: User | null; 
+  // user: any;
   token: string | null;
   
   // Loading states for better UX

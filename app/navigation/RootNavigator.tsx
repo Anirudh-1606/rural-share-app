@@ -1,27 +1,34 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import BottomTabNavigator from './BottomTabNavigator';
-import ProfileScreen from '../screens/ProfileScreen';
-import AuthScreen from '../screens/AuthScreen';
 import { checkAuth } from '../store/slices/authSlice';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
-import { COLORS } from '../utils';
-import CreateListingScreen from '../screens/CreateListingScreen';
-import MyListingsScreen from '../screens/MyListingsScreen';
-import ListingDetailScreen from '../screens/ListingDetailScreen';
-import ProviderBookingsScreen from '../screens/ProviderBookingsScreen';
-import OrderDetailScreen from '../screens/OrderDetailScreen';
+
+// Screens
+import AuthScreen from '../screens/AuthScreen';
+import SignInScreen from '../screens/SignInScreen';
+import SignUpScreen from '../screens/SignUpScreen';
+import OTPVerificationScreen from '../screens/OTPVerificationScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import BottomTabNavigator from './BottomTabNavigator';
+
 import CategoryBrowserScreen from '../screens/CategoryBrowserScreen';
+import ListingDetailScreen from '../screens/ListingDetailScreen';
+import ListingsScreen from '../screens/ListingsScreen';
 import SearchResultsScreen from '../screens/SearchResultsScreen';
 
-const Stack = createNativeStackNavigator();
+import OrderDetailScreen from '../screens/OrderDetailScreen';
+import ChatScreen from '../screens/ChatScreen';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { COLORS } from '../utils';
+import ProfileScreen from '../screens/ProfileScreen';
 
-export default function RootNavigator() {
-  const dispatch: AppDispatch = useDispatch();
+const Stack = createStackNavigator();
+
+const RootNavigator = () => {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+  const dispatch: AppDispatch = useDispatch();
 
   useEffect(() => {
     dispatch(checkAuth());
@@ -34,76 +41,37 @@ export default function RootNavigator() {
       </View>
     );
   }
-  
+
   return (
     <NavigationContainer>
-      {isAuthenticated ? (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-          <Stack.Screen 
-            name="Profile" 
-            component={ProfileScreen}
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen 
-          name="CreateListing" 
-          component={CreateListingScreen}
-          options={{
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen 
-          name="MyListings" 
-          component={MyListingsScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        <Stack.Screen 
-          name="ListingDetail" 
-          component={ListingDetailScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        <Stack.Screen 
-          name="ProviderBookings" 
-          component={ProviderBookingsScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        <Stack.Screen 
-          name="OrderDetail" 
-          component={OrderDetailScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        <Stack.Screen 
-          name="CategoryBrowser" 
-          component={CategoryBrowserScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        <Stack.Screen 
-          name="SearchResults" 
-          component={SearchResultsScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
-        
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen name="Main" component={BottomTabNavigator} />
+            {/* Add other main app screens here if they are not part of the tab navigator */}
+            
+            <Stack.Screen name="CategoryBrowser" component={CategoryBrowserScreen} />
+            <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
+            <Stack.Screen name="Listings" component={ListingsScreen} />
+            <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
+            
+            <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Auth" component={AuthScreen} />
+            <Stack.Screen name="SignIn" component={SignInScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </>
+        )}
       </Stack.Navigator>
-      ) : (
-        <AuthScreen />
-      )}
     </NavigationContainer>
   );
-}
+};
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -113,3 +81,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.BACKGROUND.PRIMARY,
   },
 });
+
+export default RootNavigator;
