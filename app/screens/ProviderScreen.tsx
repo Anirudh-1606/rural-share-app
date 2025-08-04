@@ -57,6 +57,9 @@ const ProviderScreen = () => {
     { label: 'Analytics', icon: 'bar-chart-outline' },
   ];
 
+
+  //to put in data bro 
+
   const recentBookings = [
     { 
       service: 'Tractor Rental', 

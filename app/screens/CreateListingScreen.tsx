@@ -201,13 +201,7 @@ const CreateListingScreen = () => {
           return false;
         }
         return true;
-      case 1: // Basic Information
-        if (!formData.title.trim() || !formData.description.trim() || !formData.locationAddress.trim()) {
-          Alert.alert('Validation Error', 'Please fill in Title, Description, and Location.');
-          return false;
-        }
-        return true;
-      case 2: // Pricing & Availability
+      case 1: // Pricing & Availability
         if (!formData.price || parseFloat(formData.price) <= 0 || !formData.unitOfMeasure || !formData.minimumOrder || parseInt(formData.minimumOrder) <= 0) {
           Alert.alert('Validation Error', 'Please enter a valid Price, Unit, and Minimum Order.');
           return false;
@@ -217,7 +211,7 @@ const CreateListingScreen = () => {
           return false;
         }
         return true;
-      case 3: // Photos & Tags
+      case 2: // Photos & Tags
         return true;
       default:
         return true;
@@ -226,7 +220,7 @@ const CreateListingScreen = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 3) {
+      if (currentStep < 2) {
         setCurrentStep(currentStep + 1);
       } else {
         handleSubmit();
@@ -282,7 +276,7 @@ const CreateListingScreen = () => {
 
   const renderStepIndicator = () => (
     <View style={styles.stepIndicator}>
-      {[0, 1, 2, 3].map((step) => (
+      {[0, 1, 2].map((step) => (
         <View key={step} style={styles.stepContainer}>
           <View
             style={[
@@ -299,7 +293,7 @@ const CreateListingScreen = () => {
               {step + 1}
             </Text>
           </View>
-          {step < 3 && (
+          {step < 2 && (
             <View
               style={[
                 styles.stepLine,
@@ -382,48 +376,7 @@ const CreateListingScreen = () => {
     </View>
   );
 
-  const renderStep1 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Basic Information</Text>
-      <Text style={styles.stepSubtitle}>Tell us about your service</Text>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Title *</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="e.g., John Deere Tractor with Plough"
-          placeholderTextColor="#9CA3AF"
-          value={formData.title}
-          onChangeText={(text) => handleInputChange('title', text)}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Description *</Text>
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
-          placeholder="Describe your service in detail..."
-          placeholderTextColor="#9CA3AF"
-          value={formData.description}
-          onChangeText={(text) => handleInputChange('description', text)}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Location Address *</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter service location address"
-          placeholderTextColor="#9CA3AF"
-          value={formData.locationAddress}
-          onChangeText={(text) => handleInputChange('locationAddress', text)}
-        />
-      </View>
-    </View>
-  );
 
   const renderStep2 = () => (
     <View style={styles.stepContent}>
@@ -486,55 +439,7 @@ const CreateListingScreen = () => {
         />
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Available From *</Text>
-        <TouchableOpacity
-          style={styles.dateInput}
-          onPress={() => setShowFromDatePicker(true)}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-          <Text style={styles.dateText}>
-            {formData.availableFrom.toLocaleDateString()}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {showFromDatePicker && (
-        <DateTimePicker
-          value={formData.availableFrom}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, date) => {
-            setShowFromDatePicker(Platform.OS === 'ios');
-            if (date) handleInputChange('availableFrom', date);
-          }}
-        />
-      )}
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Available To *</Text>
-        <TouchableOpacity
-          style={styles.dateInput}
-          onPress={() => setShowToDatePicker(true)}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-          <Text style={styles.dateText}>
-            {formData.availableTo.toLocaleDateString()}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {showToDatePicker && (
-        <DateTimePicker
-          value={formData.availableTo}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, date) => {
-            setShowToDatePicker(Platform.OS === 'ios');
-            if (date) handleInputChange('availableTo', date);
-          }}
-        />
-      )}
+      
     </View>
   );
 
@@ -571,34 +476,7 @@ const CreateListingScreen = () => {
         )}
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Tags</Text>
-        <View style={styles.tagInputContainer}>
-          <TextInput
-            style={styles.tagInput}
-            placeholder="Add tags (e.g., tractor, plough)"
-            placeholderTextColor="#9CA3AF"
-            value={tagInput}
-            onChangeText={setTagInput}
-            onSubmitEditing={() => {
-              if (tagInput.trim()) {
-                handleAddTag(tagInput.trim());
-                setTagInput('');
-              }
-            }}
-            returnKeyType="done"
-          />
-        </View>
-        <View style={styles.tagsContainer}>
-          {formData.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
-              <TouchableOpacity onPress={() => handleRemoveTag(index)}>
-                <Ionicons name="close-circle" size={18} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-          ))}</View>
-      </View>
+      
     </View>
   );
 
@@ -635,9 +513,8 @@ const CreateListingScreen = () => {
             contentContainerStyle={styles.scrollContent}
           >
             {currentStep === 0 && renderStep0()}
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
+            {currentStep === 1 && renderStep2()}
+            {currentStep === 2 && renderStep3()}
             <View 
             style={styles.actionButtons}
           >
@@ -659,7 +536,7 @@ const CreateListingScreen = () => {
                   disabled={loading}
                 >
                   <Text style={styles.primaryButtonText}>
-                    {currentStep === 3 ? 'Create Listing' : 'Next'}
+                    {currentStep === 2 ? 'Create Listing' : 'Next'}
                   </Text>
                 </TouchableOpacity>
               )}
