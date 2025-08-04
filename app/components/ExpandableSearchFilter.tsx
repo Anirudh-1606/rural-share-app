@@ -37,12 +37,18 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
   useEffect(() => {
     if (!expanded) {
       setShowDatePicker(false);
+      // Force clean state when collapsed
+      animatedHeight.setValue(0);
+      contentOpacityAnim.setValue(0);
     }
   }, [expanded]);
 
-  // Ensure showDatePicker is false when component mounts
+  // Reset states when component unmounts
   useEffect(() => {
-    setShowDatePicker(false);
+    return () => {
+      animatedHeight.setValue(0);
+      contentOpacityAnim.setValue(0);
+    };
   }, []);
 
   const getCurrentContentHeight = () => {
@@ -59,7 +65,10 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
     if (newExpandedState) {
       // Ensure we start with date cards when expanding
       setShowDatePicker(false);
-      Animated.sequence([
+      // Reset height to 0 first to ensure clean animation
+      animatedHeight.setValue(0);
+      contentOpacityAnim.setValue(0); // Also reset opacity
+      Animated.parallel([
         Animated.timing(animatedHeight, { toValue: dateCardsHeight, duration: 300, useNativeDriver: false }),
         Animated.timing(contentOpacityAnim, { toValue: 1, duration: 200, delay: 100, useNativeDriver: true }),
       ]).start(() => onToggleExpand(true, dateCardsHeight));
@@ -68,6 +77,8 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
         Animated.timing(contentOpacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
         Animated.timing(animatedHeight, { toValue: 0, duration: 300, useNativeDriver: false }),
       ]).start(() => {
+        // Force height to 0 after animation
+        animatedHeight.setValue(0);
         onToggleExpand(false, 0);
         // Reset to date cards after collapse animation completes
         setShowDatePicker(false);
@@ -78,7 +89,14 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
   const handleDateSelect = (date: string) => {
     dispatch(setDateRange({ startDate: date, endDate: date }));
     if (expanded) {
-      toggleExpand();
+      // Ensure clean collapse
+      Animated.timing(contentOpacityAnim, { 
+        toValue: 0, 
+        duration: 150, 
+        useNativeDriver: true 
+      }).start(() => {
+        toggleExpand();
+      });
     }
   };
 
@@ -116,16 +134,30 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
 
   const handleConfirmDate = (start: string, end: string) => {
     dispatch(setDateRange({ startDate: start, endDate: end }));
-    setShowDatePicker(false);
-    if (expanded) {
-      toggleExpand();
-    }
+    // Animate back to date cards view before collapsing
+    Animated.timing(contentOpacityAnim, { 
+      toValue: 0, 
+      duration: 150, 
+      useNativeDriver: true 
+    }).start(() => {
+      setShowDatePicker(false);
+      if (expanded) {
+        toggleExpand();
+      }
+    });
   };
 
   const handleClearDate = () => {
     dispatch(setTomorrowAsDefault());
     if (expanded) {
-      toggleExpand();
+      // Ensure clean collapse
+      Animated.timing(contentOpacityAnim, { 
+        toValue: 0, 
+        duration: 150, 
+        useNativeDriver: true 
+      }).start(() => {
+        toggleExpand();
+      });
     }
   };
 
@@ -239,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderRadius: BORDER_RADIUS.MD,
     marginTop: SPACING['XL'],
-    marginBottom: SPACING.SM,
+    marginBottom: 0, // Removed bottom margin completely
     marginHorizontal: SPACING.MD,
   },
   header: {
@@ -268,9 +300,12 @@ const styles = StyleSheet.create({
   content: {
     backgroundColor: 'transparent',
     overflow: 'hidden',
+    minHeight: 0, // Ensure it can collapse to 0
   },
   innerContent: {
     flex: 1,
+    padding: 0, // Ensure no extra padding
+    margin: 0, // Ensure no extra margin
   },
   immediateButton: {
     alignItems: 'center',

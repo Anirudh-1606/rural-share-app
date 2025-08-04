@@ -11,7 +11,7 @@ import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { logout } from '../store/slices/authSlice';
@@ -30,7 +30,6 @@ type ProfileSection = {
 };
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
   const dispatch: AppDispatch = useDispatch();
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -288,7 +287,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.SM,
   },
   preferenceTitle: {
-    fontSize: FONT_SIZES.MD,
+    fontSize: FONT_SIZES.BASE,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.LG,
   },
   sectionTitle: {
-    fontSize: FONT_SIZES.MD,
+    fontSize: FONT_SIZES.BASE,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginHorizontal: SPACING.MD,
