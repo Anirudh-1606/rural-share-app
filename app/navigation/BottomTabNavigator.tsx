@@ -12,9 +12,6 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-
-
-
 function PlaceholderScreen({ label }: { label: string }) {
   return <Text style={{ flex: 1, textAlign: 'center', marginTop: 100 }}>{label} Screen</Text>;
 }
@@ -84,6 +81,9 @@ export default function BottomTabNavigator() {
           } else if (route.name === 'Notifications') {
             iconName = 'notifications-outline';
             label = 'Notifications';
+          } else if (route.name === 'Profile') {
+            iconName = 'person-outline';
+            label = 'Profile';
           }
 
           return (
@@ -118,11 +118,7 @@ export default function BottomTabNavigator() {
                   }}
                 >
                   {label}
-                  
                 </Text>
-                
-
-                  
               )}
             </View>
           );
@@ -133,6 +129,7 @@ export default function BottomTabNavigator() {
       <Tab.Screen name="Provider" component={ProviderNavigator} />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
