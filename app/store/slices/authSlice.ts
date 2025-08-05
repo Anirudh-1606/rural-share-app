@@ -1,4 +1,4 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../config/api';
 import { authAPI } from '../../services/api'; // Import authAPI
@@ -20,13 +20,13 @@ const decodeJwt = (token: string) => {
 
 // Types for authentication state
 interface User {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   phone: string;
   role: 'individual' | 'SHG' | 'FPO' | 'admin';
   isVerified: boolean;
-  kycStatus: 'pending' | 'approved' | 'rejected';
+  kycStatus: 'pending' | 'approved' | 'rejected' | 'none';
 }
 
 interface AuthState {
@@ -290,7 +290,7 @@ export const signIn = createAsyncThunk(
         const userId = decodedToken.sub;
         const userProfileResponse = await authAPI.getProfile(userId);
         if (userProfileResponse.success && userProfileResponse.data) {
-          user = userProfileResponse.data;
+          user = userProfileResponse.data as unknown as User;
           console.log('🔄 signIn: Fetched user profile:', user);
           await AsyncStorage.setItem('user', JSON.stringify(user));
         } else {
@@ -553,8 +553,8 @@ const authSlice = createSlice({
         // Check if user needs OTP verification
         if (action.payload.requiresOTP) {
           state.isOTPRequired = true;
-          state.pendingUserPhone = action.meta.arg.phone;
-          state.pendingUserId = action.payload.user?._id || action.payload.userId;
+          state.pendingUserPhone = action.meta.arg.emailOrPhone;
+          state.pendingUserId = action.payload.user?.id || action.payload.userId;
           state.currentScreen = 'otp';
           console.log('✅ signIn.fulfilled: OTP required, navigating to OTP screen.');
         } else {
@@ -636,7 +636,7 @@ const authSlice = createSlice({
       .addCase(loginAndVerifyUser.fulfilled, (state, action) => {
         state.isSigningIn = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = action.payload.user as unknown as User;
         state.token = action.payload.token;
         state.currentScreen = 'authenticated';
         state.error = null;

@@ -17,36 +17,10 @@ import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import CatalogueService from '../services/CatalogueService';
-import ListingService from '../services/ListingService';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import CatalogueService, { Category, SubCategory } from '../services/CatalogueService';
+import ListingService, { CreateListingPayload } from '../services/ListingService';
 import categoryIcons from '../utils/icons';
-
-interface Category {
-  _id: string;
-  name: string;
-  description: string;
-  category: string;
-  transactionType: string;
-  parentId: string | null;
-  icon: string;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-interface SubCategory {
-  _id: string;
-  name: string;
-  categoryId: string;
-  description?: string;
-  defaultUnitOfMeasure?: string;
-  suggestedMinPrice?: number;
-  suggestedMaxPrice?: number;
-}
 
 interface ListingFormData {
   providerId: string;
@@ -57,27 +31,22 @@ interface ListingFormData {
   subCategorySelected: boolean;
   photos: string[];
   videoUrl?: string;
-  coordinates: [number, number]; // [longitude, latitude]
+  coordinates: [number, number];
   price: string;
   unitOfMeasure: string;
   minimumOrder: string;
-  availableFrom: Date;
-  availableTo: Date;
-  tags: string[];
-  termsAndConditions?: string;
-  locationAddress: string; // To store the address string
-}
 
+}
 
 const CreateListingScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute<any>();
+  const listingId = route.params?.listingId;
+  const isEditMode = !!listingId;
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [showFromDatePicker, setShowFromDatePicker] = useState(false);
-  const [showToDatePicker, setShowToDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tagInput, setTagInput] = useState('');
   const [showUnitDropdown, setShowUnitDropdown] = useState(false);
- 
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableSubCategories, setAvailableSubCategories] = useState<SubCategory[]>([]);
   const [isDataReady, setIsDataReady] = useState(false);
@@ -92,38 +61,55 @@ const CreateListingScreen = () => {
     subCategoryId: '',
     subCategorySelected: false,
     photos: [],
-    coordinates: [78.1134, 18.0534], // Default to a central India location (longitude, latitude)
+    coordinates: [78.1134, 18.0534],
     price: '',
     unitOfMeasure: 'per_hour',
     minimumOrder: '1',
-    availableFrom: new Date(),
-    availableTo: new Date(new Date().setMonth(new Date().getMonth() + 6)),
-    tags: [],
-    locationAddress: '',
+
   });
 
   useEffect(() => {
     const initializeData = async () => {
-      if (user?.id) {
-        setFormData(prev => ({ ...prev, providerId: user.id }));
-        try {
-          setLoading(true);
-          const categories = await CatalogueService.getCategories();
-          setAvailableCategories(categories);
-          setIsDataReady(true);
-        } catch (error) {
-          console.error('Error initializing data:', error);
-          Alert.alert('Error', 'Failed to load initial data. Please try again.');
-        } finally {
-          setLoading(false);
+      try {
+        setLoading(true);
+        const categories = await CatalogueService.getCategories();
+        setAvailableCategories(categories);
+
+        if (isEditMode && token) {
+          const listingData = await ListingService.getListingById(listingId, token);
+          setFormData({
+            ...formData,
+            providerId: typeof listingData.providerId === 'object' 
+              ? listingData.providerId._id 
+              : listingData.providerId,
+            title: listingData.title,
+            description: listingData.description,
+            categoryId: listingData.categoryId._id,
+            subCategoryId: listingData.subCategoryId._id,
+            photos: listingData.photos,
+            price: listingData.price.toString(),
+            unitOfMeasure: listingData.unitOfMeasure,
+            minimumOrder: listingData.minimumOrder.toString(),
+
+            subCategorySelected: true,
+          });
+          if (listingData.categoryId) {
+            fetchSubCategories(listingData.categoryId._id);
+          }
+        } else if (user?.id) {
+          setFormData(prev => ({ ...prev, providerId: user.id }));
         }
-      } else {
-        setIsDataReady(false);
+        setIsDataReady(true);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        Alert.alert('Error', 'Failed to load initial data. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
     initializeData();
-  }, [user]);
+  }, [user, isEditMode, listingId, token]);
 
   const fetchSubCategories = async (categoryId: string) => {
     try {
@@ -132,7 +118,6 @@ const CreateListingScreen = () => {
       setAvailableSubCategories(subCategories);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
-      Alert.alert('Error', 'Failed to load subcategories. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -179,39 +164,14 @@ const CreateListingScreen = () => {
       photos: [...prev.photos, `https://picsum.photos/200/300?random=${Math.random()}`],
     }));
   };
-
-  const handleAddTag = (tag: string) => {
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-    }
-  };
-
-  const handleRemoveTag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index),
-    }));
-  };
-
+  
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 0: // Category Selection
-        if (!formData.categoryId || !formData.subCategorySelected) {
-          Alert.alert('Validation Error', 'Please select both a Category and a Subcategory.');
-          return false;
-        }
-        return true;
-      case 1: // Pricing & Availability
-        if (!formData.price || parseFloat(formData.price) <= 0 || !formData.unitOfMeasure || !formData.minimumOrder || parseInt(formData.minimumOrder) <= 0) {
-          Alert.alert('Validation Error', 'Please enter a valid Price, Unit, and Minimum Order.');
-          return false;
-        }
-        if (formData.availableFrom > formData.availableTo) {
-          Alert.alert('Validation Error', 'Available From date cannot be after Available To date.');
-          return false;
-        }
-        return true;
-      case 2: // Photos & Tags
+      case 0:
+        return !!formData.categoryId && !!formData.subCategoryId;
+      case 1:
+        return !!formData.price && !!formData.unitOfMeasure && !!formData.minimumOrder;
+      case 2:
         return true;
       default:
         return true;
@@ -225,50 +185,57 @@ const CreateListingScreen = () => {
       } else {
         handleSubmit();
       }
+    } else {
+      Alert.alert('Validation Error', 'Please complete all required fields in this step.');
     }
   };
 
-  const formatDateForAPI = (date: Date): string => {
-    return date.toISOString();
-  };
-
   const handleSubmit = async () => {
-    if (!user?.id) {
-      Alert.alert('Error', 'Could not find user information. Please try logging in again.');
+    if (!token) {
+      Alert.alert('Error', 'You must be logged in to create or update a listing.');
       return;
     }
 
     try {
       setLoading(true);
-      
-      const payload = {
-        providerId: user.id,
+      const payload: CreateListingPayload = {
+        providerId: formData.providerId,
         title: formData.title,
         description: formData.description,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
         photos: formData.photos,
-        coordinates: formData.coordinates,
+        location: {
+          type: 'Point',
+          coordinates: [formData.coordinates[0], formData.coordinates[1]],
+        },
         price: parseFloat(formData.price),
         unitOfMeasure: formData.unitOfMeasure,
         minimumOrder: parseInt(formData.minimumOrder),
-        availableFrom: formatDateForAPI(formData.availableFrom),
-        availableTo: formatDateForAPI(formData.availableTo),
-        tags: formData.tags,
+        availableFrom: new Date().toISOString(),
+        availableTo: new Date().toISOString(),
+        tags: [],
         isActive: true,
-        viewCount: 0,
-        bookingCount: 0,
         isVerified: false,
       };
 
-      await ListingService.createListing(payload, token);
-      
-      Alert.alert('Success', 'Listing created successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      if (isEditMode) {
+        console.log('Updating listing with payload:', JSON.stringify(payload, null, 2));
+        console.log('Updating listing - providerId:', payload.providerId);
+        console.log('Updating listing - listingId:', listingId);
+        await ListingService.updateListing(listingId, payload, token);
+        Alert.alert('Success', 'Listing updated successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        await ListingService.createListing(payload, token);
+        Alert.alert('Success', 'Listing created successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      }
     } catch (error) {
-      console.error('Error creating listing:', error);
-      Alert.alert('Error', 'Failed to create listing. Please try again.');
+      console.error('Error submitting listing:', error);
+      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'create'} listing. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -310,10 +277,8 @@ const CreateListingScreen = () => {
     <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>Category Selection</Text>
       <Text style={styles.stepSubtitle}>Choose the right category for your service</Text>
-
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Category *</Text>
-        {loading && availableCategories.length === 0 && <Text style={styles.loadingText}>Loading categories...</Text>}
         <View style={styles.categoryGrid}>
           {availableCategories.map((category) => (
             <TouchableOpacity
@@ -325,7 +290,7 @@ const CreateListingScreen = () => {
               onPress={() => handleCategorySelect(category._id)}
             >
               <Image
-                source={categoryIcons[category.icon] || categoryIcons['tools']}
+                source={categoryIcons[category.icon || 'tools'] || categoryIcons['tools']}
                 style={styles.categoryIcon}
               />
               <Text
@@ -341,11 +306,9 @@ const CreateListingScreen = () => {
           ))}
         </View>
       </View>
-
       {formData.categoryId && (
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Subcategory *</Text>
-          {loading && availableSubCategories.length === 0 && <Text style={styles.loadingText}>Loading subcategories...</Text>}
           {availableSubCategories.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {availableSubCategories.map((sub) => (
@@ -369,33 +332,28 @@ const CreateListingScreen = () => {
               ))}
             </ScrollView>
           ) : (
-            !loading && <Text style={styles.noDataText}>No subcategories available for this category</Text>
+            <Text style={styles.noDataText}>No subcategories available</Text>
           )}
         </View>
       )}
     </View>
   );
 
-
-
-  const renderStep2 = () => (
+  const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Pricing & Availability</Text>
-      <Text style={styles.stepSubtitle}>Set your pricing and availability</Text>
-
+      <Text style={styles.stepTitle}>Pricing & Details</Text>
+      <Text style={styles.stepSubtitle}>Set your pricing and other details</Text>
       <View style={styles.rowInputs}>
         <View style={[styles.inputGroup, { flex: 1 }]}>
           <Text style={styles.inputLabel}>Price *</Text>
           <TextInput
             style={styles.textInput}
             placeholder="0"
-            placeholderTextColor="#9CA3AF"
             value={formData.price}
             onChangeText={(text) => handleInputChange('price', text)}
             keyboardType="numeric"
           />
         </View>
-
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
           <Text style={styles.inputLabel}>Unit *</Text>
           <TouchableOpacity 
@@ -409,7 +367,6 @@ const CreateListingScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-
       {showUnitDropdown && (
         <View style={styles.dropdownOptions}>
           {unitOptions.map((option) => (
@@ -426,28 +383,23 @@ const CreateListingScreen = () => {
           ))}
         </View>
       )}
-
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Minimum Order *</Text>
         <TextInput
           style={styles.textInput}
           placeholder="1"
-          placeholderTextColor="#9CA3AF"
           value={formData.minimumOrder}
           onChangeText={(text) => handleInputChange('minimumOrder', text)}
           keyboardType="numeric"
         />
       </View>
-
-      
     </View>
   );
 
-  const renderStep3 = () => (
+  const renderStep2 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Photos & Tags</Text>
-      <Text style={styles.stepSubtitle}>Add photos and tags to attract more customers</Text>
-
+      <Text style={styles.stepTitle}>Photos & Description</Text>
+      <Text style={styles.stepSubtitle}>Add photos and a description for your listing</Text>
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Photos *</Text>
         <TouchableOpacity style={styles.photoUploadBox} onPress={handleAddPhoto}>
@@ -475,8 +427,17 @@ const CreateListingScreen = () => {
           </ScrollView>
         )}
       </View>
-
-      
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Description *</Text>
+        <TextInput
+          style={[styles.textInput, styles.textArea]}
+          placeholder="Describe your service in detail..."
+          value={formData.description}
+          onChangeText={(text) => handleInputChange('description', text)}
+          multiline
+          numberOfLines={4}
+        />
+      </View>
     </View>
   );
 
@@ -502,22 +463,18 @@ const CreateListingScreen = () => {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Create New Listing</Text>
+            <Text style={styles.headerTitle}>{isEditMode ? 'Edit Listing' : 'Create New Listing'}</Text>
             <View style={{ width: 40 }} />
           </View>
-
           {renderStepIndicator()}
-
           <ScrollView 
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
           >
             {currentStep === 0 && renderStep0()}
-            {currentStep === 1 && renderStep2()}
-            {currentStep === 2 && renderStep3()}
-            <View 
-            style={styles.actionButtons}
-          >
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            <View style={styles.actionButtons}>
               {currentStep > 0 && (
                 <TouchableOpacity
                   style={styles.secondaryButton}
@@ -526,24 +483,20 @@ const CreateListingScreen = () => {
                   <Text style={styles.secondaryButtonText}>Back</Text>
                 </TouchableOpacity>
               )}
-              {((currentStep > 0) || (formData.categoryId && formData.subCategorySelected)) && (
-                <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    currentStep === 0 && { flex: 1 },
-                  ]}
-                  onPress={handleNext}
-                  disabled={loading}
-                >
-                  <Text style={styles.primaryButtonText}>
-                    {currentStep === 2 ? 'Create Listing' : 'Next'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  currentStep === 0 && { flex: 1 },
+                ]}
+                onPress={handleNext}
+                disabled={loading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {currentStep === 2 ? (isEditMode ? 'Update Listing' : 'Create Listing') : 'Next'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-
-          
         </View>
       </KeyboardAvoidingView>
     </SafeAreaWrapper>
@@ -623,12 +576,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY.DARK,
   },
   scrollView: {
-    marginBottom: 50,
     flex: 1,
   },
- 
   scrollContent: {
-    paddingBottom: 20, // Ensures content doesn't hide behind the button bar
+    paddingBottom: 20,
   },
   stepContent: {
     padding: 20,
@@ -643,7 +594,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: '#6B7280',
-    fontWeight: '400',
     marginBottom: 24,
   },
   inputGroup: {
@@ -765,22 +715,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.PRIMARY,
   },
-  dateInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 16,
-    fontFamily: FONTS.POPPINS.REGULAR,
-    color: COLORS.TEXT.PRIMARY,
-    marginLeft: 12,
-  },
   photoUploadBox: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -819,38 +753,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  tagInputContainer: {
-    marginBottom: 12,
-  },
-  tagInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: FONTS.POPPINS.REGULAR,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: COLORS.PRIMARY.LIGHT,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tagText: {
-    fontSize: 14,
-    fontFamily: FONTS.POPPINS.MEDIUM,
-    color: COLORS.PRIMARY.MAIN,
-    marginRight: 4,
-  },
   actionButtons: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -886,13 +788,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: '#6B7280',
-  },
-  loadingText: {
-    fontSize: 14,
-    fontFamily: FONTS.POPPINS.REGULAR,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginVertical: 10,
   },
   noDataText: {
     fontSize: 14,

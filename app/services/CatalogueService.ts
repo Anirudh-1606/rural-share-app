@@ -3,7 +3,7 @@ import { API_CONFIG } from '../config/api';
 
 const BASE_URL = API_CONFIG.development.android + '/api' // Replace with actual base URL
 
-interface Category {
+export interface Category {
   _id: string;
   name: string;
   slug: string;
@@ -11,13 +11,15 @@ interface Category {
   description?: string;
 }
 
-interface SubCategory {
+export interface SubCategory {
   _id: string;
   categoryId: string;
   name: string;
   slug: string;
   description?: string;
   icon?: string;
+  defaultUnitOfMeasure?: string;
+  suggestedMinPrice?: number;
 }
 
 interface CategoryHierarchy {
@@ -33,6 +35,21 @@ class CatalogueService {
       return response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
+      throw error;
+    }
+  }
+
+  // Get a single category by its ID
+  async getCategoryById(categoryId: string): Promise<Category> {
+    try {
+      const categories = await this.getCategories();
+      const category = categories.find(c => c._id === categoryId);
+      if (!category) {
+        throw new Error(`Category with ID ${categoryId} not found`);
+      }
+      return category;
+    } catch (error) {
+      console.error('Error fetching category by ID:', error);
       throw error;
     }
   }
@@ -59,6 +76,24 @@ class CatalogueService {
       return response.data;
     } catch (error) {
       console.error('Error fetching subcategories:', error);
+      throw error;
+    }
+  }
+
+  // Get a single sub-category by its ID
+  async getSubCategoryById(subCategoryId: string): Promise<SubCategory> {
+    try {
+      // Since there is no direct endpoint, we need to fetch all and then filter
+      // This is not ideal, but it's the only way with the current API
+      const response = await axios.get(`${BASE_URL}/catalogue/subcategories`);
+      const subCategory = response.data.find((sc: SubCategory) => sc._id === subCategoryId);
+
+      if (!subCategory) {
+        throw new Error(`Sub-category with ID ${subCategoryId} not found`);
+      }
+      return subCategory;
+    } catch (error) {
+      console.error('Error fetching sub-category by ID:', error);
       throw error;
     }
   }
