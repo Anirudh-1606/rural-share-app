@@ -15,12 +15,14 @@ import {
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
+import { COLORS, SHADOWS, FONTS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CatalogueService, { Category, SubCategory } from '../services/CatalogueService';
 import ListingService, { CreateListingPayload } from '../services/ListingService';
 import categoryIcons from '../utils/icons';
+import MultiImagePicker from '../components/MultiImagePicker';
+import { ImagePickerResult } from '../services/ImagePickerService';
 
 interface ListingFormData {
   providerId: string;
@@ -29,7 +31,7 @@ interface ListingFormData {
   categoryId: string;
   subCategoryId: string;
   subCategorySelected: boolean;
-  photos: string[];
+  photos: ImagePickerResult[];
   videoUrl?: string;
   coordinates: [number, number];
   price: string;
@@ -157,11 +159,10 @@ const CreateListingScreen = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAddPhoto = () => {
-    Alert.alert('Photo Picker', 'Photo picker will be implemented');
+  const handleImagesSelected = (images: ImagePickerResult[]) => {
     setFormData(prev => ({
       ...prev,
-      photos: [...prev.photos, `https://picsum.photos/200/300?random=${Math.random()}`],
+      photos: images,
     }));
   };
   
@@ -204,11 +205,16 @@ const CreateListingScreen = () => {
         description: formData.description,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
+<<<<<<< HEAD
         photos: formData.photos,
         location: {
           type: 'Point',
           coordinates: [formData.coordinates[0], formData.coordinates[1]],
         },
+=======
+        photos: formData.photos, // Send ImagePickerResult objects directly
+        coordinates: formData.coordinates,
+>>>>>>> 6f82ee59370ce739dd22d1e52e30a74ad5c1e2f7
         price: parseFloat(formData.price),
         unitOfMeasure: formData.unitOfMeasure,
         minimumOrder: parseInt(formData.minimumOrder),
@@ -402,30 +408,11 @@ const CreateListingScreen = () => {
       <Text style={styles.stepSubtitle}>Add photos and a description for your listing</Text>
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Photos *</Text>
-        <TouchableOpacity style={styles.photoUploadBox} onPress={handleAddPhoto}>
-          <Ionicons name="camera-outline" size={32} color="#6B7280" />
-          <Text style={styles.photoUploadText}>Add Photos</Text>
-        </TouchableOpacity>
-        {formData.photos.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoList}>
-            {formData.photos.map((photo, index) => (
-              <View key={index} style={styles.photoItem}>
-                <Image source={{ uri: photo }} style={styles.photoThumbnail} />
-                <TouchableOpacity
-                  style={styles.photoRemove}
-                  onPress={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      photos: prev.photos.filter((_, i) => i !== index),
-                    }));
-                  }}
-                >
-                  <Ionicons name="close" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
+        <MultiImagePicker
+          onImagesSelected={handleImagesSelected}
+          maxImages={10}
+          placeholder="Add Photos"
+        />
       </View>
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Description *</Text>

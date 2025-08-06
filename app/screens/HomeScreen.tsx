@@ -17,8 +17,10 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
-import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
+
+
 import SmartDatePicker from '../components/SmartDatePicker';
+import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
 import CatalogueService from '../services/CatalogueService';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -81,7 +83,8 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(false);
+  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(true);
+  
   const dispatch = useDispatch();
   
   // Get date range from Redux
@@ -126,6 +129,8 @@ export default function HomeScreen() {
       handleFilterToggle(false, 0);
     }
   }, [isDatePickerExpanded]);
+
+  
 
   const searchBarTop = headerHeightAnim.interpolate({
     inputRange: [INITIAL_HEADER_HEIGHT, 1000],
@@ -192,13 +197,9 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-            <SmartDatePicker 
-              onMoreDatesPress={() => setIsDatePickerExpanded(!isDatePickerExpanded)} 
-              selectedDate={date ? new Date(date) : null}
-              onDateSelect={(d) => dispatch(setDate(d.toISOString()))}
-            />
+            
           </View>
-          {isDatePickerExpanded && <ExpandableSearchFilter onHeightChange={(height) => handleFilterToggle(isDatePickerExpanded, height)} />}
+          {isDatePickerExpanded && <ExpandableSearchFilter onToggleExpand={(expanded, height) => handleFilterToggle(expanded, height)} />}
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>

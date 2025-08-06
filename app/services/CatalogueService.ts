@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_CONFIG } from '../config/api';
 
-const BASE_URL = API_CONFIG.development.ios + '/api' // Replace with actual base URL
+const BASE_URL = API_CONFIG.development.android + '/api' // Replace with actual base URL
 
 export interface Category {
   _id: string;

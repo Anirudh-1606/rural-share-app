@@ -14,12 +14,13 @@ const getTomorrowDate = () => {
   return tomorrow.toISOString().split('T')[0];
 };
 
-const initialState: DateRangeState = {
+const initialState: DateState = {
+  date: null,
   startDate: getTomorrowDate(),
   endDate: getTomorrowDate(),
 };
 
-const dateSlice = createSlice({
+const dateRangeSlice = createSlice({
   name: 'date',
   initialState,
   reducers: {

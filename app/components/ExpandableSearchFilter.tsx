@@ -17,7 +17,7 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const contentOpacityAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useDispatch();
-  const { startDate, endDate } = useSelector((state: RootState) => state.dateRange);
+  const { startDate, endDate } = useSelector((state: RootState) => state.date);
   const dotAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
