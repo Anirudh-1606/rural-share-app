@@ -72,7 +72,7 @@ const animatedPlaceholders = [
   'drip irrigation',
 ];
 
-const INITIAL_HEADER_HEIGHT = 220;
+const INITIAL_HEADER_HEIGHT = 140;
 const SEARCH_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
@@ -83,7 +83,7 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(true);
+  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(false);
   
   const dispatch = useDispatch();
   
@@ -125,13 +125,7 @@ export default function HomeScreen() {
     }).start();
   };
 
-  useEffect(() => {
-    if (isDatePickerExpanded) {
-      handleFilterToggle(true, 350);
-    } else {
-      handleFilterToggle(false, 0);
-    }
-  }, [isDatePickerExpanded]);
+
 
   
 
@@ -193,7 +187,7 @@ export default function HomeScreen() {
             </View>
             
           </View>
-          {isDatePickerExpanded && <ExpandableSearchFilter onToggleExpand={(expanded, height) => handleFilterToggle(expanded, height)} />}
+          <ExpandableSearchFilter onToggleExpand={(expanded, height) => handleFilterToggle(expanded, height)} />
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
