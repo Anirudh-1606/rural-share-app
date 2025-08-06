@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -99,7 +99,7 @@ const ProviderScreen = () => {
                 </Text>
               </View>
               <TouchableOpacity style={styles.notificationButton}>
-                <Ionicons name="notifications-outline" size={20} color={COLORS.NEUTRAL.WHITE} />
+                <Ionicons name="notifications-outline" size={18} color={COLORS.NEUTRAL.WHITE} />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>
             </View>
@@ -112,7 +112,7 @@ const ProviderScreen = () => {
           {stats.map((stat, index) => (
             <View key={index} style={styles.statCard}>
               <View style={[styles.statIconContainer, { backgroundColor: stat.bgColor }]}>
-                <Ionicons name={stat.icon} size={22} color={stat.iconColor} />
+                <Ionicons name={stat.icon} size={18} color={stat.iconColor} />
               </View>
               <Text style={styles.statValue}>
                 {stat.value}
@@ -136,7 +136,7 @@ const ProviderScreen = () => {
                 onPress={() => navigation.navigate('CreateListing')}
               >
                 <View style={styles.quickActionIconWrapper}>
-                  <Ionicons name="add-circle-outline" size={35} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="add-circle-outline" size={28} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>Add New</Text>
               </TouchableOpacity>
@@ -146,21 +146,21 @@ const ProviderScreen = () => {
                 onPress={() => navigation.navigate('MyListings')}
               >
                 <View style={styles.quickActionIconWrapper}>
-                  <Ionicons name="document-text-outline" size={33} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="document-text-outline" size={26} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>My Listings</Text>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.quickActionItem}  onPress={() => navigation.navigate('ProviderBookings')}>
                 <View style={styles.quickActionIconWrapper}>
-                  <Ionicons name="calendar-outline" size={33} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="calendar-outline" size={26} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>Bookings</Text>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.quickActionItem}>
                 <View style={styles.quickActionIconWrapper}>
-                  <Ionicons name="bar-chart-outline" size={35} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="bar-chart-outline" size={28} color={COLORS.PRIMARY.MAIN} />
                 </View>
                 <Text style={styles.quickActionLabel}>Analytics</Text>
               </TouchableOpacity>
@@ -199,7 +199,7 @@ const ProviderScreen = () => {
                 </View>
               </View>
               <View style={styles.bookingTime}>
-                <Ionicons name="time-outline" size={14} color="#6B7280" />
+                <Ionicons name="time-outline" size={12} color="#6B7280" />
                 <Text style={styles.timeText}>
                   {booking.time}
                 </Text>
@@ -252,21 +252,21 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   greetingText: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.SM,
     color: 'rgba(255,255,255,0.9)',
     fontFamily: FONTS.POPPINS.REGULAR,
   },
   waveEmoji: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.SM,
   },
   providerName: {
-    fontSize: 26,
+    fontSize: FONT_SIZES.XL,
     color: COLORS.NEUTRAL.WHITE,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
   },
   notificationButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 12,
     justifyContent: 'center',
@@ -275,13 +275,13 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
+    top: 6,
+    right: 6,
+    width: 6,
+    height: 6,
     backgroundColor: '#ff4757',
-    borderRadius: 4,
-    borderWidth: 2,
+    borderRadius: 3,
+    borderWidth: 1.5,
     borderColor: COLORS.NEUTRAL.WHITE,
   },
   headerCircle: {
@@ -311,26 +311,26 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statIconContainer: {
-    width: 45,
-    height: 42,
+    width: 40,
+    height: 38,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: FONT_SIZES.LG,
     fontFamily: FONTS.POPPINS.BOLD,
     color: COLORS.TEXT.PRIMARY,
-    lineHeight: 35,
+    lineHeight: 28,
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.SM,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
     fontWeight: '500',
   },
   section: {
@@ -344,13 +344,13 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: FONT_SIZES.BASE,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     fontWeight: '500',
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.SM,
     fontFamily: FONTS.POPPINS.MEDIUM,
     color: COLORS.PRIMARY.MAIN,
   },
@@ -371,14 +371,14 @@ const styles = StyleSheet.create({
     // borderRadius: BORDER_RADIUS.MD,
   },
   quickActionIconWrapper: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 5,
   },
   quickActionLabel: {
-    fontSize: 13,
+    fontSize: FONT_SIZES.XS,
     fontFamily: FONTS.POPPINS.MEDIUM,
     color: '#6B7280',
     textAlign: 'center',
@@ -400,24 +400,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bookingTitle: {
-    fontSize: 16,
+    fontSize: FONT_SIZES.BASE,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: 2,
   },
   customerName: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.SM,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: '#6B7280',
   },
   statusBadge: {
     backgroundColor: '#d4edda',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 20,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: FONT_SIZES.XS,
     fontFamily: FONTS.POPPINS.MEDIUM,
     color: '#155724',
   },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeText: {
-    fontSize: 13,
+    fontSize: FONT_SIZES.XS,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: '#6B7280',
     marginLeft: 6,

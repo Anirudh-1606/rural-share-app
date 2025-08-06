@@ -36,13 +36,6 @@ const mechanicalIcon = require('../assets/mechanical.png');
 const farmerIcon = require('../assets/farmer.png');
 const backgroundImg = require('../assets/provider-bg.png');
 
-const exploreItems = [
-  { icon: tractorIcon, label: 'Tractor' },
-  { icon: ploughingIcon, label: 'Ploughing' },
-  { icon: seedSowingIcon, label: 'Seed Sowing' },
-  { icon: dripIrrigationIcon, label: 'Drip Irrigation' },
-];
-
 interface Category {
   _id: string;
   name: string;
@@ -379,21 +372,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   locationText: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'white',
     fontFamily: FONTS.POPPINS.SEMIBOLD,
   },
   locationIcon: {
     marginLeft: 6,
-  },
-  profileButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'white',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.MD,
   },
   searchContainer: {
     position: 'absolute',
@@ -413,7 +397,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 12,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.PRIMARY,
     padding: 0,
@@ -429,14 +413,14 @@ const styles = StyleSheet.create({
   animatedPlaceholder: {
     color: COLORS.TEXT.PLACEHOLDER,
     fontFamily: FONTS.POPPINS.REGULAR,
-    fontSize: 15,
+    fontSize: 12,
   },
   servicesSection: {
     paddingLeft: SPACING.SM,
     paddingRight: SPACING.SM,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.MD,
@@ -474,7 +458,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.XL,
   },
   quickServicesTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.MD,
@@ -498,14 +482,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   ctaTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: FONTS.POPPINS.BOLD,
     color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
     lineHeight: 22,
   },
   ctaSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.SECONDARY,
     marginBottom: SPACING.MD,
@@ -522,7 +506,7 @@ const styles = StyleSheet.create({
     gap: SPACING.XS,
   },
   ctaButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONTS.POPPINS.SEMIBOLD,
     color: COLORS.PRIMARY.MAIN,
   },

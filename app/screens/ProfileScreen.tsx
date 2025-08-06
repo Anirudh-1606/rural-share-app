@@ -4,15 +4,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-
   Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { logout } from '../store/slices/authSlice';
@@ -31,7 +30,6 @@ type ProfileSection = {
 };
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
   const dispatch: AppDispatch = useDispatch();
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -76,37 +74,31 @@ const ProfileScreen = () => {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.TEXT.PRIMARY} />
-          </TouchableOpacity>
-          <Text variant="h3" weight="bold" align="center" style={styles.headerTitle}>
-            Profile
-          </Text>
-          <View style={{ width: 40 }} />
+          
         </View>
 
         {/* Profile Info */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person-circle" size={100} color={COLORS.PRIMARY.MAIN} />
+            <Ionicons name="person-circle" size={80} color={COLORS.PRIMARY.MAIN} />
             <TouchableOpacity style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={20} color={COLORS.PRIMARY.MAIN} />
+              <Ionicons name="camera" size={16} color={COLORS.PRIMARY.MAIN} />
             </TouchableOpacity>
           </View>
-          <Text variant="h3" weight="bold" align="center" style={styles.userName}>
+          <Text style={styles.userName}>
             {user?.name || 'John Doe'}
           </Text>
-          <Text variant="body" color={COLORS.TEXT.SECONDARY} align="center">
+          <Text style={styles.userRole}>
             {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Rural Service Provider'}
           </Text>
         </View>
 
         {/* Default Tab Preference */}
          <View style={styles.preferenceCard}>
-          <Text variant="h4" weight="semibold" style={styles.preferenceTitle}>
+          <Text style={styles.preferenceTitle}>
             Default Landing Page
           </Text>
-          <Text variant="caption" color={COLORS.TEXT.SECONDARY} style={styles.preferenceDescription}>
+          <Text style={styles.preferenceDescription}>
             Choose which page to show when you open the app
           </Text>
           
@@ -118,23 +110,20 @@ const ProfileScreen = () => {
               <View style={styles.tabOptionContent}>
                 <Ionicons 
                   name="search-outline" 
-                  size={24} 
+                  size={20} 
                   color={defaultTab === 'seeker' ? COLORS.PRIMARY.MAIN : COLORS.TEXT.SECONDARY} 
                   style={styles.tabOptionIcon}
                 />
                 <View style={styles.tabOptionTextContainer}>
                   <Text 
-                    variant="body" 
-                    weight={defaultTab === 'seeker' ? 'semibold' : 'regular'}
-                    color={defaultTab === 'seeker' ? COLORS.PRIMARY.MAIN : COLORS.TEXT.PRIMARY}
+                    style={[
+                      styles.tabOptionText,
+                      defaultTab === 'seeker' && styles.tabOptionTextActive
+                    ]}
                   >
                     Service Seeker
                   </Text>
-                  <Text 
-                    variant="caption" 
-                    color={COLORS.TEXT.SECONDARY}
-                    style={styles.tabOptionSubtext}
-                  >
+                  <Text style={styles.tabOptionSubtext}>
                     Find services & equipment
                   </Text>
                 </View>
@@ -148,23 +137,20 @@ const ProfileScreen = () => {
               <View style={styles.tabOptionContent}>
                 <Ionicons 
                   name="briefcase-outline" 
-                  size={24} 
+                  size={20} 
                   color={defaultTab === 'provider' ? COLORS.PRIMARY.MAIN : COLORS.TEXT.SECONDARY} 
                   style={styles.tabOptionIcon}
                 />
                 <View style={styles.tabOptionTextContainer}>
                   <Text 
-                    variant="body" 
-                    weight={defaultTab === 'provider' ? 'semibold' : 'regular'}
-                    color={defaultTab === 'provider' ? COLORS.PRIMARY.MAIN : COLORS.TEXT.PRIMARY}
+                    style={[
+                      styles.tabOptionText,
+                      defaultTab === 'provider' && styles.tabOptionTextActive
+                    ]}
                   >
                     Service Provider
                   </Text>
-                  <Text 
-                    variant="caption" 
-                    color={COLORS.TEXT.SECONDARY}
-                    style={styles.tabOptionSubtext}
-                  >
+                  <Text style={styles.tabOptionSubtext}>
                     Offer your services
                   </Text>
                 </View>
@@ -177,7 +163,7 @@ const ProfileScreen = () => {
         {/* Settings Sections */}
         {profileSections.map((section, index) => (
           <View key={index} style={styles.section}>
-            <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               {section.title}
             </Text>
             <View style={styles.sectionCard}>
@@ -193,15 +179,15 @@ const ProfileScreen = () => {
                 >
                   <View style={styles.settingItemLeft}>
                     <View style={styles.iconContainer}>
-                      <Ionicons name={item.icon} size={22} color={COLORS.PRIMARY.MAIN} />
+                      <Ionicons name={item.icon} size={18} color={COLORS.PRIMARY.MAIN} />
                     </View>
-                    <Text variant="body" style={styles.settingLabel}>
+                    <Text style={styles.settingLabel}>
                       {item.label}
                     </Text>
                   </View>
                   <View style={styles.settingItemRight}>
                     {item.value && (
-                      <Text variant="body" color={COLORS.TEXT.SECONDARY}>
+                      <Text style={styles.settingValue}>
                         {item.value}
                       </Text>
                     )}
@@ -218,7 +204,7 @@ const ProfileScreen = () => {
                       />
                     )}
                     {item.onPress && (
-                      <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT.SECONDARY} />
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.TEXT.SECONDARY} />
                     )}
                   </View>
                 </TouchableOpacity>
@@ -229,14 +215,14 @@ const ProfileScreen = () => {
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={() => dispatch(logout())}>
-          <Ionicons name="log-out-outline" size={22} color={COLORS.NEUTRAL.WHITE} />
-          <Text variant="body" weight="semibold" color={COLORS.NEUTRAL.WHITE} style={{ marginLeft: 8 }}>
+          <Ionicons name="log-out-outline" size={18} color={COLORS.NEUTRAL.WHITE} />
+          <Text style={styles.logoutText}>
             Logout
           </Text>
         </TouchableOpacity>
 
         {/* App Version */}
-        <Text variant="caption" color={COLORS.TEXT.SECONDARY} align="center" style={styles.version}>
+        <Text style={styles.version}>
           Version 1.0.0
         </Text>
       </ScrollView>
@@ -251,18 +237,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: SPACING.MD,
     paddingVertical: SPACING.SM,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   headerTitle: {
-    flex: 1,
+    fontSize: FONT_SIZES.LG,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
   },
   profileCard: {
     alignItems: 'center',
@@ -278,14 +259,24 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: COLORS.BACKGROUND.CARD,
     borderRadius: BORDER_RADIUS.FULL,
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.MD,
   },
   userName: {
+    fontSize: FONT_SIZES.XL,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
+    textAlign: 'center',
+  },
+  userRole: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.SECONDARY,
+    textAlign: 'center',
   },
    preferenceCard: {
     backgroundColor: COLORS.BACKGROUND.CARD,
@@ -296,9 +287,15 @@ const styles = StyleSheet.create({
     ...SHADOWS.SM,
   },
   preferenceTitle: {
+    fontSize: FONT_SIZES.BASE,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
     marginBottom: SPACING.XS,
   },
   preferenceDescription: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.SECONDARY,
     marginBottom: SPACING.MD,
   },
   tabOptions: {
@@ -326,13 +323,28 @@ const styles = StyleSheet.create({
   tabOptionTextContainer: {
     flex: 1,
   },
+  tabOptionText: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.PRIMARY,
+  },
+  tabOptionTextActive: {
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.PRIMARY.MAIN,
+  },
   tabOptionSubtext: {
+    fontSize: FONT_SIZES.XS,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.SECONDARY,
     marginTop: 2,
   },
   section: {
     marginBottom: SPACING.LG,
   },
   sectionTitle: {
+    fontSize: FONT_SIZES.BASE,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
     marginHorizontal: SPACING.MD,
     marginBottom: SPACING.SM,
   },
@@ -359,8 +371,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     backgroundColor: COLORS.PRIMARY.LIGHT,
     borderRadius: BORDER_RADIUS.MD,
     justifyContent: 'center',
@@ -368,7 +380,15 @@ const styles = StyleSheet.create({
     marginRight: SPACING.SM,
   },
   settingLabel: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.PRIMARY,
     flex: 1,
+  },
+  settingValue: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.SECONDARY,
   },
   settingItemRight: {
     flexDirection: 'row',
@@ -385,7 +405,17 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.MD,
     ...SHADOWS.MD,
   },
+  logoutText: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.NEUTRAL.WHITE,
+    marginLeft: 8,
+  },
   version: {
+    fontSize: FONT_SIZES.XS,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: COLORS.TEXT.SECONDARY,
+    textAlign: 'center',
     marginBottom: SPACING.MD,
   },
 });

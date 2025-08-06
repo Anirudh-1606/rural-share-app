@@ -7,10 +7,16 @@ interface DateState {
   endDate: string | null;
 }
 
-const initialState: DateState = {
-  date: null,
-  startDate: null,
-  endDate: null,
+// Get tomorrow's date as default
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
+const initialState: DateRangeState = {
+  startDate: getTomorrowDate(),
+  endDate: getTomorrowDate(),
 };
 
 const dateSlice = createSlice({
@@ -31,8 +37,13 @@ const dateSlice = createSlice({
       state.startDate = null;
       state.endDate = null;
     },
+    setTomorrowAsDefault: (state) => {
+      const tomorrow = getTomorrowDate();
+      state.startDate = tomorrow;
+      state.endDate = tomorrow;
+    },
   },
 });
 
-export const { setDate, clearDate, setDateRange, clearDateRange } = dateSlice.actions;
-export default dateSlice.reducer;
+export const { setDateRange, clearDateRange, setTomorrowAsDefault } = dateRangeSlice.actions;
+export default dateRangeSlice.reducer;
