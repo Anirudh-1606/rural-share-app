@@ -1,20 +1,28 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface DateRangeState {
+interface DateState {
+  date: string | null;
   startDate: string | null;
   endDate: string | null;
 }
 
-const initialState: DateRangeState = {
+const initialState: DateState = {
+  date: null,
   startDate: null,
   endDate: null,
 };
 
-const dateRangeSlice = createSlice({
-  name: 'dateRange',
+const dateSlice = createSlice({
+  name: 'date',
   initialState,
   reducers: {
+    setDate: (state, action: PayloadAction<string>) => {
+      state.date = action.payload;
+    },
+    clearDate: (state) => {
+      state.date = null;
+    },
     setDateRange: (state, action: PayloadAction<{ startDate: string; endDate: string }>) => {
       state.startDate = action.payload.startDate;
       state.endDate = action.payload.endDate;
@@ -26,5 +34,5 @@ const dateRangeSlice = createSlice({
   },
 });
 
-export const { setDateRange, clearDateRange } = dateRangeSlice.actions;
-export default dateRangeSlice.reducer;
+export const { setDate, clearDate, setDateRange, clearDateRange } = dateSlice.actions;
+export default dateSlice.reducer;

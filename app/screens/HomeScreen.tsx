@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TextInput, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
-  Animated, 
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Animated,
   Platform,
   Dimensions,
   AppState
@@ -18,9 +18,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
 import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
+import SmartDatePicker from '../components/SmartDatePicker';
 import CatalogueService from '../services/CatalogueService';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { setDate } from '../store/slices/dateRangeSlice';
 
 import categoryIcons from '../utils/icons';
 
@@ -74,7 +76,7 @@ const animatedPlaceholders = [
   'drip irrigation',
 ];
 
-const INITIAL_HEADER_HEIGHT = 170;
+const INITIAL_HEADER_HEIGHT = 220;
 const SEARCH_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
@@ -86,9 +88,11 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(false);
+  const dispatch = useDispatch();
   
   // Get date range from Redux
-  const dateRange = useSelector((state: RootState) => state.dateRange);
+  const { date, startDate, endDate } = useSelector((state: RootState) => state.date);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -122,6 +126,14 @@ export default function HomeScreen() {
     }).start();
   };
 
+  useEffect(() => {
+    if (isDatePickerExpanded) {
+      handleFilterToggle(true, 350);
+    } else {
+      handleFilterToggle(false, 0);
+    }
+  }, [isDatePickerExpanded]);
+
   const searchBarTop = headerHeightAnim.interpolate({
     inputRange: [INITIAL_HEADER_HEIGHT, 1000],
     outputRange: [INITIAL_HEADER_HEIGHT - SEARCH_BAR_HEIGHT / 2, 1000 - SEARCH_BAR_HEIGHT / 2],
@@ -133,10 +145,9 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
       location: currentLocation,
-      dateRange: {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      },
+      date: date,
+      startDate: startDate,
+      endDate: endDate,
     });
   };
 
@@ -145,10 +156,9 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: category.name,
       location: currentLocation,
-      dateRange: {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      },
+      date: date,
+      startDate: startDate,
+      endDate: endDate,
     });
   };
 
@@ -157,10 +167,9 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
       location: currentLocation,
-      dateRange: {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      },
+      date: date,
+      startDate: startDate,
+      endDate: endDate,
     });
   };
 
@@ -189,16 +198,14 @@ export default function HomeScreen() {
                   <Ionicons name="location" size={16} color="white" style={styles.locationIcon} />
                 </View>
               </View>
-              <TouchableOpacity 
-                style={styles.profileButton}
-                onPress={() => navigation.navigate('Profile')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="person" size={24} color={COLORS.PRIMARY.MAIN} />
-              </TouchableOpacity>
             </View>
+            <SmartDatePicker 
+              onMoreDatesPress={() => setIsDatePickerExpanded(!isDatePickerExpanded)} 
+              selectedDate={date ? new Date(date) : null}
+              onDateSelect={(d) => dispatch(setDate(d.toISOString()))}
+            />
           </View>
-          <ExpandableSearchFilter onToggleExpand={handleFilterToggle} />
+          {isDatePickerExpanded && <ExpandableSearchFilter onHeightChange={(height) => handleFilterToggle(isDatePickerExpanded, height)} />}
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
@@ -228,7 +235,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT}]}>
+        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT + 10 }]}>
           <Text style={styles.sectionTitle}>Browse by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScrollContent}>
             {categories.slice(0, 4).map(category => (
@@ -239,7 +246,7 @@ export default function HomeScreen() {
                 onPress={() => navigation.navigate('CategoryBrowser', { selectedCategoryId: category._id })}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Image source={categoryIcons[category.icon] || null} style={styles.serviceIcon} />
+                  <Image source={categoryIcons[category.icon]} style={styles.serviceIcon} />
                 </View>
                 <Text style={styles.serviceLabel}>{category.name}</Text>
               </TouchableOpacity>
@@ -264,8 +271,10 @@ export default function HomeScreen() {
         <View style={styles.ctaCardsRow}>
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need mechanical{'\n'}help?</Text>
-              <Text style={styles.ctaSubtitle}>Find nearby{'\n'}tractor</Text>
+              <Text style={styles.ctaTitle}>Need mechanical{
+}help?</Text>
+              <Text style={styles.ctaSubtitle}>Find nearby{
+}tractor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
                 <Text style={styles.ctaButtonText}>Explore</Text>
                 <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />

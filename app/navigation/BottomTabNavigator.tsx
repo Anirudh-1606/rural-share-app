@@ -85,6 +85,10 @@ export default function BottomTabNavigator() {
             iconName = 'notifications-outline';
             label = 'Notifications';
           }
+           else if (route.name === 'Profile') {
+            iconName = 'person-outline';
+            label = 'Profile';
+          }
 
           return (
             <View
@@ -133,6 +137,7 @@ export default function BottomTabNavigator() {
       <Tab.Screen name="Provider" component={ProviderNavigator} />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
