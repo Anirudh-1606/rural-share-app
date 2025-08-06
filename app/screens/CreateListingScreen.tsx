@@ -205,16 +205,8 @@ const CreateListingScreen = () => {
         description: formData.description,
         categoryId: formData.categoryId,
         subCategoryId: formData.subCategoryId,
-<<<<<<< HEAD
-        photos: formData.photos,
-        location: {
-          type: 'Point',
-          coordinates: [formData.coordinates[0], formData.coordinates[1]],
-        },
-=======
         photos: formData.photos, // Send ImagePickerResult objects directly
         coordinates: formData.coordinates,
->>>>>>> 6f82ee59370ce739dd22d1e52e30a74ad5c1e2f7
         price: parseFloat(formData.price),
         unitOfMeasure: formData.unitOfMeasure,
         minimumOrder: parseInt(formData.minimumOrder),

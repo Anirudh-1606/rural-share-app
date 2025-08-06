@@ -1,11 +1,9 @@
 import axios from 'axios';
-<<<<<<< HEAD
-=======
-import { ImagePickerResult } from './ImagePickerService';
 
->>>>>>> 6f82ee59370ce739dd22d1e52e30a74ad5c1e2f7
+
 import { API_BASE_URL } from '../config/api';
 import { Category, SubCategory } from './CatalogueService';
+import { ImagePickerResult } from './ImagePickerService';
 
 const BASE_URL = API_BASE_URL;
 
@@ -15,17 +13,8 @@ export interface CreateListingPayload {
   description: string;
   categoryId: string;
   subCategoryId: string;
-<<<<<<< HEAD
-  photos: string[];
-  videoUrl?: string;
-  location: {
-    type: 'Point';
-    coordinates: [number, number]; 
-  };
-=======
   photos: ImagePickerResult[];
   coordinates: [number, number]; // [longitude, latitude]
->>>>>>> 6f82ee59370ce739dd22d1e52e30a74ad5c1e2f7
   price: number;
   unitOfMeasure: string;
   minimumOrder: number;
@@ -61,17 +50,6 @@ class ListingService {
 
   async createListing(payload: CreateListingPayload, token: string): Promise<Listing> {
     try {
-<<<<<<< HEAD
-      const response = await axios.post(
-        `${BASE_URL}/listings`,
-        payload,
-        this.getAuthHeaders(token)
-      );
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating listing:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Failed to create listing');
-=======
       console.log('ListingService: Creating listing with payload:', payload);
       console.log('ListingService: Using token:', token);
 
@@ -134,7 +112,6 @@ class ListingService {
     } catch (error: any) {
       console.error('ListingService: Error creating listing:', error);
       throw error;
->>>>>>> 6f82ee59370ce739dd22d1e52e30a74ad5c1e2f7
     }
   }
 
