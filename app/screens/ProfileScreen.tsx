@@ -5,12 +5,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import SingleImagePicker from '../components/SingleImagePicker';
+import { ImagePickerResult } from '../services/ImagePickerService';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
@@ -33,6 +36,7 @@ const ProfileScreen = () => {
   const dispatch: AppDispatch = useDispatch();
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [profileImage, setProfileImage] = useState<ImagePickerResult | null>(null);
 
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -80,10 +84,17 @@ const ProfileScreen = () => {
         {/* Profile Info */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person-circle" size={80} color={COLORS.PRIMARY.MAIN} />
-            <TouchableOpacity style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={16} color={COLORS.PRIMARY.MAIN} />
-            </TouchableOpacity>
+            {profileImage ? (
+              <Image source={{ uri: profileImage.uri }} style={styles.profileImage} />
+            ) : (
+              <Ionicons name="person-circle" size={80} color={COLORS.PRIMARY.MAIN} />
+            )}
+            <SingleImagePicker
+              onImageSelected={(image) => setProfileImage(image)}
+              placeholder=""
+              showPreview={false}
+              style={styles.imagePickerOverlay}
+            />
           </View>
           <Text style={styles.userName}>
             {user?.name || 'John Doe'}
@@ -261,6 +272,23 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.FULL,
     width: 32,
     height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.MD,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  imagePickerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    backgroundColor: COLORS.BACKGROUND.CARD,
+    borderRadius: BORDER_RADIUS.FULL,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.MD,

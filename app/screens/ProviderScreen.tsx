@@ -140,7 +140,7 @@ const ProviderScreen = () => {
               
               <TouchableOpacity 
                 style={styles.quickActionItem}
-                onPress={() => navigation.navigate('MyListings')}
+                onPress={() => navigation.navigate('MyListingsScreen')}
               >
                 <View style={styles.quickActionIconWrapper}>
                   <Ionicons name="document-text-outline" size={26} color={COLORS.PRIMARY.MAIN} />
