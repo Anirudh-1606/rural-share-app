@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Animated,
+import { 
+  View, 
+  StyleSheet, 
+  TextInput, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  Animated, 
   Platform,
   Dimensions,
   AppState
@@ -17,14 +17,10 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import LocationService from '../services/locationService';
-
-
-import SmartDatePicker from '../components/SmartDatePicker';
 import ExpandableSearchFilter from '../components/ExpandableSearchFilter';
 import CatalogueService from '../services/CatalogueService';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { setDate } from '../store/slices/dateRangeSlice';
 
 import categoryIcons from '../utils/icons';
 
@@ -71,7 +67,7 @@ const animatedPlaceholders = [
   'drip irrigation',
 ];
 
-const INITIAL_HEADER_HEIGHT = 220;
+const INITIAL_HEADER_HEIGHT = 170;
 const SEARCH_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
@@ -83,12 +79,9 @@ export default function HomeScreen() {
   const placeholderAnim = useRef(new Animated.Value(1)).current;
   const headerHeightAnim = useRef(new Animated.Value(INITIAL_HEADER_HEIGHT)).current;
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(true);
-  
-  const dispatch = useDispatch();
   
   // Get date range from Redux
-  const { date, startDate, endDate } = useSelector((state: RootState) => state.date);
+  const dateRange = useSelector((state: RootState) => state.dateRange);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -122,16 +115,6 @@ export default function HomeScreen() {
     }).start();
   };
 
-  useEffect(() => {
-    if (isDatePickerExpanded) {
-      handleFilterToggle(true, 350);
-    } else {
-      handleFilterToggle(false, 0);
-    }
-  }, [isDatePickerExpanded]);
-
-  
-
   const searchBarTop = headerHeightAnim.interpolate({
     inputRange: [INITIAL_HEADER_HEIGHT, 1000],
     outputRange: [INITIAL_HEADER_HEIGHT - SEARCH_BAR_HEIGHT / 2, 1000 - SEARCH_BAR_HEIGHT / 2],
@@ -143,9 +126,10 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
       location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
     });
   };
 
@@ -154,9 +138,10 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: category.name,
       location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
     });
   };
 
@@ -165,9 +150,10 @@ export default function HomeScreen() {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
       location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      dateRange: {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      },
     });
   };
 
@@ -197,9 +183,8 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-            
           </View>
-          {isDatePickerExpanded && <ExpandableSearchFilter onToggleExpand={(expanded, height) => handleFilterToggle(expanded, height)} />}
+          <ExpandableSearchFilter onToggleExpand={handleFilterToggle} />
         </Animated.View>
 
         <Animated.View style={[styles.searchContainer, { top: searchBarTop }]}>
@@ -229,7 +214,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT + 10 }]}>
+        <View style={[styles.servicesSection, { marginTop: SEARCH_BAR_HEIGHT}]}>
           <Text style={styles.sectionTitle}>Browse by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScrollContent}>
             {categories.slice(0, 4).map(category => (
@@ -240,7 +225,7 @@ export default function HomeScreen() {
                 onPress={() => navigation.navigate('CategoryBrowser', { selectedCategoryId: category._id })}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Image source={categoryIcons[category.icon]} style={styles.serviceIcon} />
+                  <Image source={categoryIcons[category.icon] || null} style={styles.serviceIcon} />
                 </View>
                 <Text style={styles.serviceLabel}>{category.name}</Text>
               </TouchableOpacity>
@@ -265,10 +250,8 @@ export default function HomeScreen() {
         <View style={styles.ctaCardsRow}>
           <TouchableOpacity style={styles.ctaCard} activeOpacity={0.8}>
             <View style={styles.ctaContent}>
-              <Text style={styles.ctaTitle}>Need mechanical{
-}help?</Text>
-              <Text style={styles.ctaSubtitle}>Find nearby{
-}tractor</Text>
+              <Text style={styles.ctaTitle}>Need mechanical{'\n'}help?</Text>
+              <Text style={styles.ctaSubtitle}>Find nearby{'\n'}tractor</Text>
               <TouchableOpacity style={styles.ctaButton} activeOpacity={0.7}>
                 <Text style={styles.ctaButtonText}>Explore</Text>
                 <Ionicons name="arrow-forward" size={16} color={COLORS.PRIMARY.MAIN} />

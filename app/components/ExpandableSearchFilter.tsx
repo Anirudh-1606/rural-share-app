@@ -17,7 +17,7 @@ export default function ExpandableSearchFilter({ onToggleExpand }: { onToggleExp
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const contentOpacityAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useDispatch();
-  const { startDate, endDate } = useSelector((state: RootState) => state.date);
+  const { startDate, endDate } = useSelector((state: RootState) => state.dateRange);
   const dotAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.SM,
-    paddingVertical: SPACING['2XL'],
+    paddingVertical: SPACING.XS,
   },
   headerTextContainer: {
     flexDirection: 'row',
@@ -287,7 +287,8 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: COLORS.TEXT.INVERSE,
-    fontSize: 16,
+    fontSize: FONT_SIZES.BASE,
+    fontFamily: FONTS.POPPINS.MEDIUM,
   },
   flashingDot: {
     width: 8,
@@ -309,7 +310,6 @@ const styles = StyleSheet.create({
   immediateButton: {
     alignItems: 'center',
     marginTop: SPACING.SM,
-    // marginBottom: SPACING.SM,
     backgroundColor: 'transparent',
     paddingVertical: SPACING.XS,
   },
