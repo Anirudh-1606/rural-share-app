@@ -1,12 +1,12 @@
 import {configureStore} from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import dateReducer from './slices/dateRangeSlice';
+import dateSlice from './slices/dateRangeSlice';
 import listingReducer from './slices/listingSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    date: dateReducer,
+    date: dateSlice,
     listing: listingReducer,
   },
 });
