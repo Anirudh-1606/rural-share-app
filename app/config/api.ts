@@ -11,7 +11,7 @@ export const API_CONFIG = {
     // android: 'http:// 192.168.1.101:3000', 
     
     // For iOS Simulator (replace with your actual IP)
-    // ios: 'http://192.168.1.100:3000', // Replace with your computer's IP
+    ios: 'http://localhost:3000',
     
     // For Physical Device (replace with your actual IP)
     device: 'http://192.168.1.101:3000', // Replace with your computer's IP
@@ -27,7 +27,7 @@ export const API_CONFIG = {
 const getBaseURL = () => {
   // For now, we'll use Android emulator settings
   // You can make this more dynamic based on Platform.OS or __DEV__
-  return API_CONFIG.development.android;
+  return API_CONFIG.development.ios;
 };
 
 // 📡 Export the current base URL

@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
-const BASE_URL = 'http://10.0.2.2:3000/api'; // Replace with actual base URL
+const BASE_URL = API_CONFIG.development.ios + '/api' // Replace with actual base URL
 
 interface Category {
   _id: string;

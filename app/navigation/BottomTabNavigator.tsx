@@ -4,9 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen';
-import ProviderScreen from '../screens/ProviderScreen';
+import ProviderNavigator from './ProviderNavigator';
 import Text from '../components/Text'; // Custom Text component
 import { COLORS, BORDER_RADIUS, SHADOWS } from '../utils'; // Your theme constants
+
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -49,14 +51,16 @@ export default function BottomTabNavigator() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 16,
-          left: 16,
-          right: 16,
-          height: 60,
-          borderRadius: BORDER_RADIUS.XL || 30,
+          bottom: 0,    // Flush with bottom
+          left: 0,      // Full width
+          right: 0,     // Full width
+          height: 75,
+          borderTopLeftRadius: BORDER_RADIUS.XL || 30,   // Only top corners rounded
+          borderTopRightRadius: BORDER_RADIUS.XL || 30,  // Only top corners rounded
           backgroundColor: COLORS.BACKGROUND.NAV,
           paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           paddingTop: 12,
+          
           ...SHADOWS.MD,
           borderTopWidth: 0,
           elevation: 8,
@@ -77,6 +81,9 @@ export default function BottomTabNavigator() {
           } else if (route.name === 'Notifications') {
             iconName = 'notifications-outline';
             label = 'Notifications';
+          } else if (route.name === 'Profile') {
+            iconName = 'person-outline';
+            label = 'Profile';
           }
 
           return (
@@ -111,11 +118,7 @@ export default function BottomTabNavigator() {
                   }}
                 >
                   {label}
-                  
                 </Text>
-                
-
-                  
               )}
             </View>
           );
@@ -123,9 +126,10 @@ export default function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Seeker" component={HomeScreen} />
-      <Tab.Screen name="Provider" component={ProviderScreen} />
+      <Tab.Screen name="Provider" component={ProviderNavigator} />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

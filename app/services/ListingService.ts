@@ -1,6 +1,9 @@
 import axios from 'axios';
+import { ImagePickerResult } from './ImagePickerService';
 
-const BASE_URL = 'http://localhost:3000/api'; // Replace with actual base URL
+import { API_BASE_URL } from '../config/api';
+
+const BASE_URL = API_BASE_URL;
 
 export interface CreateListingPayload {
   providerId: string;
@@ -8,14 +11,8 @@ export interface CreateListingPayload {
   description: string;
   categoryId: string;
   subCategoryId: string;
-  photos: string[];
-  location: {
-    address: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
+  photos: ImagePickerResult[];
+  coordinates: [number, number]; // [longitude, latitude]
   price: number;
   unitOfMeasure: string;
   minimumOrder: number;
@@ -37,12 +34,69 @@ export interface Listing extends CreateListingPayload {
 
 class ListingService {
   // Create a new listing
-  async createListing(payload: CreateListingPayload): Promise<Listing> {
+  async createListing(payload: CreateListingPayload, token: string): Promise<Listing> {
     try {
-      const response = await axios.post(`${BASE_URL}/listings`, payload);
+      console.log('ListingService: Creating listing with payload:', payload);
+      console.log('ListingService: Using token:', token);
+
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      // Add photos as files
+      if (payload.photos && payload.photos.length > 0) {
+        payload.photos.forEach((photo, index) => {
+          if (photo.uri) {
+            // Create file object from URI
+            const file = {
+              uri: photo.uri,
+              type: photo.type || 'image/jpeg',
+              name: photo.name || `photo_${index}.jpg`,
+            } as any;
+            
+            formData.append('photos', file);
+          }
+        });
+      }
+
+      // Add other data as JSON string
+      const listingData = {
+        providerId: payload.providerId,
+        title: payload.title,
+        description: payload.description,
+        categoryId: payload.categoryId,
+        subCategoryId: payload.subCategoryId,
+        coordinates: payload.coordinates,
+        price: payload.price,
+        unitOfMeasure: payload.unitOfMeasure,
+        minimumOrder: payload.minimumOrder,
+        availableFrom: payload.availableFrom,
+        availableTo: payload.availableTo,
+        tags: payload.tags,
+        isActive: payload.isActive,
+        viewCount: payload.viewCount,
+        bookingCount: payload.bookingCount,
+        isVerified: payload.isVerified,
+      };
+
+      formData.append('data', JSON.stringify(listingData));
+
+      console.log('ListingService: Sending FormData with files:', payload.photos.length);
+      console.log('ListingService: FormData structure:', {
+        hasPhotos: payload.photos.length > 0,
+        photoCount: payload.photos.length,
+        firstPhotoUri: payload.photos[0]?.uri || 'none'
+      });
+
+      const response = await axios.post(`${BASE_URL}/listings`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       return response.data;
-    } catch (error) {
-      console.error('Error creating listing:', error);
+    } catch (error: any) {
+      console.error('ListingService: Error creating listing:', error);
       throw error;
     }
   }
