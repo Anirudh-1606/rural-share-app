@@ -183,6 +183,35 @@ class ListingService {
     }
   }
 
+  async searchListings(params: {
+    text?: string;
+    categoryId?: string;
+    subCategoryId?: string;
+    location?: string;
+    date?: string;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  }, token?: string): Promise<Listing[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      for (const key in params) {
+        if (params[key as keyof typeof params] !== undefined) {
+          queryParams.append(key, String(params[key as keyof typeof params]));
+        }
+      }
+      const url = `${BASE_URL}/listings/search?${queryParams.toString()}`;
+      console.log('ListingService: Search Request URL:', url);
+      console.log('ListingService: Search Request Payload (params):', params);
+      const response = await axios.get(url, this.getAuthHeaders(token));
+      console.log('ListingService: Search Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error searching listings:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to search listings');
+    }
+  }
+
   async getListingsByCategories(categoryId: string, subCategoryId: string, token?: string): Promise<Listing[]> {
     try {
       const response = await axios.get(
