@@ -26,7 +26,7 @@ import { RootState } from '../store';
 import { setLocation, setRadius } from '../store/slices/locationSlice';
 import categoryIcons from '../utils/icons';
 import ListingService, { Listing } from '../services/ListingService'; // Import ListingService and Listing type
-import ListingCard from '../components/ListingCard'; // Assuming you have a ListingCard component
+import SearchListingCard from '../components/SearchListingCard'; // Assuming you have a ListingCard component
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -159,7 +159,7 @@ const SearchResultsScreen: React.FC = () => {
         marginHorizontal: SPACING.XS, // Add horizontal margin for spacing between columns
       }}
     >
-      <ListingCard 
+      <SearchListingCard 
         listing={item} 
         onPress={() => handleCategoryPress(item)} // Pass listing to handleCategoryPress
       />

@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { API_CONFIG } from '../config/api';
+import { API_CONFIG, BASE_URL, } from '../config/api';
 
-const BASE_URL = API_CONFIG.development.ios + '/api' // Replace with actual base URL
+const BASE_URL1 = BASE_URL + '/api' // Replace with actual base URL
 
 export interface Category {
   _id: string;
@@ -31,7 +31,7 @@ class CatalogueService {
   // Get all categories
   async getCategories(): Promise<Category[]> {
     try {
-      const response = await axios.get(`${BASE_URL}/catalogue/categories`);
+      const response = await axios.get(`${BASE_URL1}/catalogue/categories`);
       return response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -57,7 +57,7 @@ class CatalogueService {
   // Get categories by type
   async getCategoriesByType(type: string): Promise<Category[]> {
     try {
-      const response = await axios.get(`${BASE_URL}/catalogue/categories`, {
+      const response = await axios.get(`${BASE_URL1}/catalogue/categories`, {
         params: { category: type }
       });
       return response.data;
@@ -71,7 +71,7 @@ class CatalogueService {
   async getSubCategories(categoryId: string): Promise<SubCategory[]> {
     try {
       const response = await axios.get(
-        `${BASE_URL}/catalogue/${categoryId}/subcategories`
+        `${BASE_URL1}/catalogue/${categoryId}/subcategories`
       );
       return response.data;
     } catch (error) {
@@ -85,7 +85,7 @@ class CatalogueService {
     try {
       // Since there is no direct endpoint, we need to fetch all and then filter
       // This is not ideal, but it's the only way with the current API
-      const response = await axios.get(`${BASE_URL}/catalogue/subcategories`);
+      const response = await axios.get(`${BASE_URL1}/catalogue/subcategories`);
       const subCategory = response.data.find((sc: SubCategory) => sc._id === subCategoryId);
 
       if (!subCategory) {
@@ -101,7 +101,7 @@ class CatalogueService {
   // Get complete category hierarchy
   async getCategoryHierarchy(): Promise<CategoryHierarchy[]> {
     try {
-      const response = await axios.get(`${BASE_URL}/catalogue/hierarchy`);
+      const response = await axios.get(`${BASE_URL1}/catalogue/hierarchy`);
       return response.data;
     } catch (error) {
       console.error('Error fetching category hierarchy:', error);

@@ -23,7 +23,7 @@ export type RootStackParamList = {
   OrderDetail: undefined;
   Chat: undefined;
   Profile: undefined;
-  CreateListing: undefined;
+  CreateListing: { listingId?: string };
 };
 
 export type BottomTabParamList = {
