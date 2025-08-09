@@ -236,7 +236,7 @@ export default function HomeScreen() {
                 <View style={styles.serviceIconWrapper}>
                   <Image source={categoryIcons[category.icon]} style={styles.serviceIcon} />
                 </View>
-                <Text style={styles.serviceLabel}>{category.name}</Text>
+                <Text style={styles.serviceLabel} numberOfLines={2}>{category.name}</Text>
               </TouchableOpacity>
             ))}
             {categories.length > 4 && (
@@ -246,9 +246,9 @@ export default function HomeScreen() {
                 onPress={() => navigation.navigate('CategoryBrowser')}
               >
                 <View style={styles.serviceIconWrapper}>
-                  <Ionicons name="ellipsis-horizontal-circle-outline" size={50} color={COLORS.PRIMARY.MAIN} />
+                  <Ionicons name="ellipsis-horizontal-circle-outline" size={32} color={COLORS.PRIMARY.MAIN} />
                 </View>
-                <Text style={styles.serviceLabel}>More</Text>
+                <Text style={styles.serviceLabel} numberOfLines={2}>More</Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -422,31 +422,38 @@ const styles = StyleSheet.create({
   },
   servicesScrollContent: {
     paddingRight: SPACING.SM,
+    gap: SPACING.SM,
   },
   serviceCard: {
     alignItems: 'center',
-    marginRight: SPACING.LG,
+    marginRight: SPACING.SM,
+    minWidth: 90,
+    maxWidth: 90,
   },
   serviceIconWrapper: {
-    width: 75,
-    height: 75,
-    borderRadius: BORDER_RADIUS.XL,
-    backgroundColor: COLORS.SECONDARY.LIGHT,
+    width: 60,
+    height: 60,
+    borderRadius: BORDER_RADIUS.LG,
+    backgroundColor: COLORS.PRIMARY.LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.SM,
+    marginBottom: SPACING.XS,
     ...SHADOWS.SM,
   },
   serviceIcon: {
-    width: 48,
-    height: 48,
+    width: 32,
+    height: 32,
     resizeMode: 'contain',
   },
   serviceLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FONTS.POPPINS.MEDIUM,
-    color: '#475569',
+    color: COLORS.TEXT.PRIMARY,
     textAlign: 'center',
+    lineHeight: 14,
+    flexWrap: 'wrap',
+    width: '100%',
+    paddingHorizontal: 4,
   },
   ctaSection: {
     paddingHorizontal: SPACING.MD,

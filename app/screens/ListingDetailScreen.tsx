@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -27,11 +27,13 @@ const ListingDetailScreen = () => {
   const [listing, setListing] = useState<PopulatedListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const fetchListingDetail = useCallback(async () => {
     try {
       setLoading(true);
       const response = await ListingService.getListingById(listingId, token || undefined);
+      console.log("This is the response", response);
       setListing(response);
     } catch (error) {
       console.error('Error fetching listing detail:', error);
@@ -136,16 +138,46 @@ const ListingDetailScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.imageGallery}
-        >
-          {listing.photos.map((photo, index) => (
-            <Image key={index} source={{ uri: photo }} style={styles.listingImage} />
-          ))}
-        </ScrollView>
+        {listing.photos && listing.photos.length > 0 ? (
+          <View style={styles.imageGalleryContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageGallery}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(event.nativeEvent.contentOffset.x / 400);
+                setCurrentImageIndex(index);
+              }}
+            >
+              {listing.photos.map((photo, index) => (
+                <Image 
+                  key={index} 
+                  source={{ uri: typeof photo === 'string' ? photo : photo.uri }} 
+                  style={styles.listingImage} 
+                />
+              ))}
+            </ScrollView>
+            {listing.photos.length > 1 && (
+              <View style={styles.paginationContainer}>
+                {listing.photos.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.paginationDot,
+                      index === currentImageIndex && styles.paginationDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.noImageContainer}>
+            <Ionicons name="image-outline" size={64} color={COLORS.TEXT.SECONDARY} />
+            <Text style={styles.noImageText}>No images available</Text>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text variant="h4" weight="bold" style={styles.title}>
@@ -346,6 +378,40 @@ const styles = StyleSheet.create({
       },
       statValue: {
         marginVertical: SPACING.XS,
+      },
+      noImageContainer: {
+        height: 250,
+        backgroundColor: COLORS.BACKGROUND.CARD,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      noImageText: {
+        marginTop: SPACING.SM,
+        fontSize: 16,
+        fontFamily: FONTS.POPPINS.MEDIUM,
+        color: COLORS.TEXT.SECONDARY,
+      },
+      imageGalleryContainer: {
+        position: 'relative',
+      },
+      paginationContainer: {
+        position: 'absolute',
+        bottom: SPACING.MD,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      paginationDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        marginHorizontal: 4,
+      },
+      paginationDotActive: {
+        backgroundColor: COLORS.PRIMARY.MAIN,
       },
 });
 

@@ -10,10 +10,12 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES, getColorWithOpacity } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import SingleImagePicker from '../components/SingleImagePicker';
-import { ImagePickerResult } from '../services/ImagePickerService';
+import ImagePickerService, { ImagePickerResult } from '../services/ImagePickerService';
+import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Button from '../components/Button';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
@@ -25,6 +27,8 @@ type ProfileSectionItem = {
   value?: string;
   onPress?: () => void;
   toggle?: boolean;
+  toggleValue?: boolean;
+  onToggle?: (value: boolean) => void;
 };
 
 type ProfileSection = {
@@ -37,12 +41,24 @@ const ProfileScreen = () => {
   const [defaultTab, setDefaultTab] = useState<'seeker' | 'provider'>('seeker');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileImage, setProfileImage] = useState<ImagePickerResult | null>(null);
+  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
   const { user } = useSelector((state: RootState) => state.auth);
+  const insets = useSafeAreaInsets();
 
   const handleTabPreferenceChange = async (tab: 'seeker' | 'provider') => {
     setDefaultTab(tab);
     await AsyncStorage.setItem('defaultTab', tab);
+  };
+
+  const openAvatarPicker = async () => {
+    const onSuccess = (image: ImagePickerResult) => setProfileImage(image);
+    const onError = () => {};
+    ImagePickerService.showImagePickerOptions(
+      () => ImagePickerService.openCamera(onSuccess, onError),
+      () => ImagePickerService.openGallery(onSuccess, onError, false),
+      () => {}
+    );
   };
 
   const profileSections: ProfileSection[] = [
@@ -59,7 +75,20 @@ const ProfileScreen = () => {
       title: 'Preferences',
       items: [
         { icon: 'language-outline', label: 'Language', value: 'English', onPress: () => {} },
-        { icon: 'moon-outline', label: 'Dark Mode', toggle: true },
+        {
+          icon: 'notifications-outline',
+          label: 'Notifications',
+          toggle: true,
+          toggleValue: notificationsEnabled,
+          onToggle: setNotificationsEnabled,
+        },
+        {
+          icon: 'moon-outline',
+          label: 'Dark Mode',
+          toggle: true,
+          toggleValue: darkModeEnabled,
+          onToggle: setDarkModeEnabled,
+        },
       ],
     },
     {
@@ -76,32 +105,103 @@ const ProfileScreen = () => {
   return (
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          
-        </View>
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={[COLORS.PRIMARY.MAIN, COLORS.PRIMARY.DARK]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.headerGradient,
+            {
+              marginLeft: -insets.left,
+              marginRight: -insets.right,
+            },
+          ]}
+        >
+          {/* Decorative shapes */}
+          <View style={styles.headerBlobOne} />
+          <View style={styles.headerBlobTwo} />
+          <View style={styles.headerTopRow}>
+            <Text color={COLORS.TEXT.INVERSE} style={styles.headerTitle}>Profile</Text>
+          </View>
+          <View style={[{paddingLeft: SPACING.MD + insets.left, paddingRight: SPACING.MD + insets.right}]}>
+          <Text color={COLORS.TEXT.INVERSE} style={styles.headerSubtitle}>
+            Manage your account and preferences
+          </Text></View>
+        </LinearGradient>
 
-        {/* Profile Info */}
+        {/* Profile Card (overlapping) */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage.uri }} style={styles.profileImage} />
-            ) : (
-              <Ionicons name="person-circle" size={80} color={COLORS.PRIMARY.MAIN} />
-            )}
-            <SingleImagePicker
-              onImageSelected={(image) => setProfileImage(image)}
-              placeholder=""
-              showPreview={false}
-              style={styles.imagePickerOverlay}
-            />
+            <View style={styles.avatarRing}>
+              {profileImage ? (
+                <Image source={{ uri: profileImage.uri }} style={styles.profileImage} />
+              ) : (
+                <Ionicons name="person-circle" size={96} color={COLORS.PRIMARY.MAIN} />
+              )}
+            </View>
+            <TouchableOpacity style={styles.cameraButton} onPress={openAvatarPicker}>
+              <Ionicons name="camera" size={16} color={COLORS.PRIMARY.MAIN} />
+            </TouchableOpacity>
           </View>
           <Text style={styles.userName}>
             {user?.name || 'John Doe'}
           </Text>
-          <Text style={styles.userRole}>
-            {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Rural Service Provider'}
-          </Text>
+          <View style={styles.roleChip}>
+            <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.PRIMARY.MAIN} />
+            <Text style={styles.roleChipText}>
+              {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Rural Service Provider'}
+            </Text>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsRow}>
+            <Button
+              title="Edit Profile"
+              size="small"
+              variant="outline"
+              leftIcon={<Ionicons name="create-outline" size={16} color={COLORS.PRIMARY.MAIN} />}
+              onPress={() => {}}
+              style={styles.quickActionButton}
+              textStyle={styles.quickActionText}
+            />
+            <Button
+              title="Bookings"
+              size="small"
+              variant="outline"
+              leftIcon={<Ionicons name="book-outline" size={16} color={COLORS.PRIMARY.MAIN} />}
+              onPress={() => {}}
+              style={styles.quickActionButton}
+              textStyle={styles.quickActionText}
+            />
+            <Button
+              title="Listings"
+              size="small"
+              variant="outline"
+              leftIcon={<Ionicons name="briefcase-outline" size={16} color={COLORS.PRIMARY.MAIN} />}
+              onPress={() => {}}
+              style={styles.quickActionButton}
+              textStyle={styles.quickActionText}
+            />
+          </View>
+
+          {/* Stats Row */}
+          <View style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statLabel}>Bookings</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>5</Text>
+              <Text style={styles.statLabel}>Listings</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>4.8</Text>
+              <Text style={styles.statLabel}>Rating</Text>
+            </View>
+          </View>
         </View>
 
         {/* Default Tab Preference */}
@@ -204,12 +304,8 @@ const ProfileScreen = () => {
                     )}
                     {item.toggle && (
                       <Switch
-                        value={item.label === 'Notifications' ? notificationsEnabled : false}
-                        onValueChange={(value) => {
-                          if (item.label === 'Notifications') {
-                            setNotificationsEnabled(value);
-                          }
-                        }}
+                        value={item.toggleValue ?? false}
+                        onValueChange={(value) => item.onToggle?.(value)}
                         trackColor={{ false: COLORS.NEUTRAL.GRAY[300], true: COLORS.PRIMARY.LIGHT }}
                         thumbColor={COLORS.PRIMARY.MAIN}
                       />
@@ -245,24 +341,72 @@ const styles = StyleSheet.create({
   container: {
     paddingBottom: SPACING['4XL'],
   },
-  header: {
+  headerGradient: {
+    height: 140,
+    width: '100%',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerBlobOne: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: getColorWithOpacity(COLORS.PRIMARY.CONTRAST, 0.08),
+    top: -40,
+    right: -30,
+  },
+  headerBlobTwo: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: getColorWithOpacity(COLORS.SECONDARY.CONTRAST, 0.06),
+    bottom: -30,
+    left: -20,
+  },
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
   },
   headerTitle: {
-    fontSize: FONT_SIZES.LG,
+    fontSize: FONT_SIZES['2XL'],
     fontFamily: FONTS.POPPINS.SEMIBOLD,
-    color: COLORS.TEXT.PRIMARY,
+  },
+  headerSubtitle: {
+    marginTop: 4,
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    opacity: 0.9,
+  },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.SECONDARY.MAIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: getColorWithOpacity(COLORS.NEUTRAL.WHITE, 0.12),
   },
   profileCard: {
     alignItems: 'center',
     paddingVertical: SPACING.LG,
+    marginTop: -34,
   },
   avatarContainer: {
     position: 'relative',
     marginBottom: SPACING.MD,
+  },
+  avatarRing: {
+    padding: 3,
+    borderRadius: 54,
+    backgroundColor: COLORS.NEUTRAL.WHITE,
+    borderWidth: 2,
+    borderColor: COLORS.PRIMARY.LIGHT,
   },
   editAvatarButton: {
     position: 'absolute',
@@ -277,20 +421,22 @@ const styles = StyleSheet.create({
     ...SHADOWS.MD,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
   },
-  imagePickerOverlay: {
+  cameraButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: BORDER_RADIUS.FULL,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.BORDER.SECONDARY,
     ...SHADOWS.MD,
   },
   userName: {
@@ -300,11 +446,64 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.XS,
     textAlign: 'center',
   },
-  userRole: {
-    fontSize: FONT_SIZES.SM,
+  roleChip: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    paddingHorizontal: SPACING.SM,
+    paddingVertical: 6,
+    backgroundColor: COLORS.BACKGROUND.CARD,
+    borderRadius: 999,
+  },
+  roleChipText: {
+    fontSize: FONT_SIZES.XS,
+    fontFamily: FONTS.POPPINS.MEDIUM,
+    color: COLORS.TEXT.SECONDARY,
+  },
+  quickActionsRow: {
+    marginTop: SPACING.MD,
+    flexDirection: 'row',
+    gap: SPACING.SM,
+  },
+  statsCard: {
+    marginTop: SPACING.MD,
+    backgroundColor: COLORS.BACKGROUND.CARD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: BORDER_RADIUS.LG,
+    paddingVertical: SPACING.SM,
+    paddingHorizontal: SPACING.LG,
+    ...SHADOWS.SM,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.XS,
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: COLORS.BORDER.PRIMARY,
+    marginHorizontal: SPACING.SM,
+  },
+  statValue: {
+    fontSize: FONT_SIZES.LG,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
+    lineHeight: 22,
+  },
+  statLabel: {
+    fontSize: FONT_SIZES.XS,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.SECONDARY,
-    textAlign: 'center',
+    lineHeight: 16,
+  },
+  quickActionButton: {
+    flex: 1,
+    borderColor: COLORS.BORDER.SECONDARY,
+  },
+  quickActionText: {
+    fontSize: 13,
   },
    preferenceCard: {
     backgroundColor: COLORS.BACKGROUND.CARD,
