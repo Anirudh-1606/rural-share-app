@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,11 +12,19 @@ import Text from '../components/Text';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import ProviderService, { ProviderDashboardResponse } from '../services/ProviderService';
+import Button from '../components/Button';
 
 const backgroundImg = require('../assets/provider-bg.png');
 
 const ProviderScreen = () => {
   const navigation = useNavigation<any>();
+  const { user, token } = useSelector((state: RootState) => state.auth);
+  const [dashboard, setDashboard] = useState<ProviderDashboardResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -26,29 +34,32 @@ const ProviderScreen = () => {
     return 'Good evening';
   };
 
-  const stats = [
-    { 
-      label: 'Bookings', 
-      value: '48', 
-      icon: 'calendar', 
-      bgColor: '#fff3e0',
-      iconColor: '#f57c00' 
-    },
-    { 
-      label: 'Listings', 
-      value: '12', 
-      icon: 'list', 
-       bgColor: '#fff3e0',
-      iconColor: '#f57c00' 
-    },
-    { 
-      label: 'Rating', 
-      value: '4.2', 
-      icon: 'star', 
-      bgColor: '#fff3e0',
-      iconColor: '#f57c00' 
-    },
-  ];
+  const stats = useMemo(() => {
+    const summary = dashboard?.summary;
+    return [
+      {
+        label: 'Bookings',
+        value: String(summary?.totalBookings ?? 0),
+        icon: 'calendar',
+        bgColor: '#fff3e0',
+        iconColor: '#f57c00',
+      },
+      {
+        label: 'Listings',
+        value: String(summary?.activeListings ?? 0),
+        icon: 'list',
+        bgColor: '#fff3e0',
+        iconColor: '#f57c00',
+      },
+      {
+        label: 'Rating',
+        value: String(summary?.averageRating ?? 0),
+        icon: 'star',
+        bgColor: '#fff3e0',
+        iconColor: '#f57c00',
+      },
+    ];
+  }, [dashboard]);
 
   const quickActions = [
     { label: 'Add New', icon: 'add-circle-outline' },
@@ -58,16 +69,25 @@ const ProviderScreen = () => {
   ];
 
 
-  //to put in data bro 
-
-  const recentBookings = [
-    { 
-      service: 'Tractor Rental', 
-      customer: 'Rajesh Kumar', 
-      time: 'Today, 2:00 PM', 
-      status: 'Confirmed' 
-    },
-  ];
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await ProviderService.getDashboard(user.id, token || undefined);
+        setDashboard(data);
+      } catch (e: any) {
+        setError(e?.message || 'Failed to fetch dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, [user?.id, token]);
 
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1}}>
@@ -112,14 +132,10 @@ const ProviderScreen = () => {
           {stats.map((stat, index) => (
             <View key={index} style={styles.statCard}>
               <View style={[styles.statIconContainer, { backgroundColor: stat.bgColor }]}>
-                <Ionicons name={stat.icon} size={18} color={stat.iconColor} />
+                <Ionicons name={stat.icon as any} size={18} color={stat.iconColor} />
               </View>
-              <Text style={styles.statValue}>
-                {stat.value}
-              </Text>
-              <Text style={styles.statLabel}>
-                {stat.label}
-              </Text>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
           ))}
         </View>
@@ -171,41 +187,55 @@ const ProviderScreen = () => {
         {/* Recent Bookings */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Recent Bookings
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>
-                View All
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Recent Bookings</Text>
+            {(dashboard?.recentBookings?.length || 0) > 0 && (
+              <TouchableOpacity onPress={() => navigation.navigate('ProviderBookings')}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
           </View>
           
-          {recentBookings.map((booking, index) => (
+          {(dashboard?.recentBookings || []).length === 0 ? (
+            <View style={styles.emptyBookingsCard}>
+              <View style={styles.emptyIconBadge}>
+                <Ionicons name="calendar-clear-outline" size={24} color={COLORS.PRIMARY.MAIN} />
+              </View>
+              <Text style={styles.emptyTitle}>No recent bookings</Text>
+              <Text style={styles.emptySubtitle}>New bookings will appear here as customers book your listings.</Text>
+              <Button
+                title="Go to Bookings"
+                variant="outline"
+                size="small"
+                onPress={() => navigation.navigate('ProviderBookings')}
+                style={styles.emptyCta}
+              />
+            </View>
+          ) : (
+          (dashboard?.recentBookings || []).map((booking, index) => (
             <View key={index} style={styles.bookingCard}>
               <View style={styles.bookingHeader}>
                 <View style={styles.bookingInfo}>
                   <Text style={styles.bookingTitle}>
-                    {booking.service}
+                    {booking.service || booking.listingTitle || 'Service'}
                   </Text>
                   <Text style={styles.customerName}>
-                    {booking.customer}
+                    {booking.customer || booking.customerName || ''}
                   </Text>
                 </View>
                 <View style={styles.statusBadge}>
                   <Text style={styles.statusText}>
-                    {booking.status}
+                    {booking.status || '—'}
                   </Text>
                 </View>
               </View>
               <View style={styles.bookingTime}>
                 <Ionicons name="time-outline" size={12} color="#6B7280" />
                 <Text style={styles.timeText}>
-                  {booking.time}
+                  {booking.time || booking.scheduledAt || ''}
                 </Text>
               </View>
             </View>
-          ))}
+          )))}
         </View>
 
         {/* Bottom Padding */}
@@ -389,6 +419,40 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 12,
     ...SHADOWS.SM,
+  },
+  emptyBookingsCard: {
+    backgroundColor: COLORS.NEUTRAL.WHITE,
+    borderRadius: 16,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.SM,
+  },
+  emptyIconBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.PRIMARY.LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: FONT_SIZES.BASE,
+    fontFamily: FONTS.POPPINS.SEMIBOLD,
+    color: COLORS.TEXT.PRIMARY,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: FONT_SIZES.SM,
+    fontFamily: FONTS.POPPINS.REGULAR,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyCta: {
+    paddingHorizontal: 14,
   },
   bookingHeader: {
     flexDirection: 'row',
