@@ -144,12 +144,51 @@ class ListingService {
   async updateListing(listingId: string, payload: Partial<CreateListingPayload>, token: string): Promise<Listing> {
     try {
       console.log('ListingService.updateListing - URL:', `${BASE_URL}/listings/${listingId}`);
-      console.log('ListingService.updateListing - payload:', JSON.stringify(payload, null, 2));
+      
+      // Create FormData for file upload (similar to createListing)
+      const formData = new FormData();
+      
+      // Add photos as files if they exist
+      if (payload.photos && payload.photos.length > 0) {
+        payload.photos.forEach((photo, index) => {
+          if (photo.uri) {
+            // Create file object from URI
+            const file = {
+              uri: photo.uri,
+              type: photo.type || 'image/jpeg',
+              name: photo.name || `photo_${index}.jpg`,
+            } as any;
+            
+            formData.append('photos', file);
+          }
+        });
+      }
+      
+      // Create a copy of payload without photos for JSON data
+      const { photos, ...listingData } = payload;
+      
+      // Add other data as JSON string
+      formData.append('data', JSON.stringify(listingData));
+      
+      console.log('ListingService.updateListing - FormData structure:', {
+        hasPhotos: payload.photos?.length > 0,
+        photoCount: payload.photos?.length || 0,
+        firstPhotoUri: payload.photos && payload.photos[0]?.uri || 'none'
+      });
+      
+      // Use FormData with multipart/form-data
       const response = await axios.patch(
         `${BASE_URL}/listings/${listingId}`,
-        payload,
-        this.getAuthHeaders(token)
+        formData,
+        {
+          ...this.getAuthHeaders(token),
+          headers: {
+            ...this.getAuthHeaders(token).headers,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
+      
       return response.data;
     } catch (error: any) {
       console.error('Error updating listing:', error.response?.data || error.message);
@@ -180,6 +219,35 @@ class ListingService {
     } catch (error: any) {
       console.error('Error toggling listing status:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Failed to update listing status');
+    }
+  }
+
+  async searchListings(params: {
+    text?: string;
+    categoryId?: string;
+    subCategoryId?: string;
+    location?: string;
+    date?: string;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  }, token?: string): Promise<Listing[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      for (const key in params) {
+        if (params[key as keyof typeof params] !== undefined) {
+          queryParams.append(key, String(params[key as keyof typeof params]));
+        }
+      }
+      const url = `${BASE_URL}/listings/search?${queryParams.toString()}`;
+      console.log('ListingService: Search Request URL:', url);
+      console.log('ListingService: Search Request Payload (params):', params);
+      const response = await axios.get(url, this.getAuthHeaders(token));
+      console.log('ListingService: Search Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error searching listings:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to search listings');
     }
   }
 

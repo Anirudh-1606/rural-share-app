@@ -25,6 +25,7 @@ import CatalogueService from '../services/CatalogueService';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { setDate } from '../store/slices/dateRangeSlice';
+import { setLocation } from '../store/slices/locationSlice'; // Import setLocation action
 
 import categoryIcons from '../utils/icons';
 
@@ -76,7 +77,6 @@ const SEARCH_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const [currentLocation, setCurrentLocation] = useState('Loading...');
   const [searchText, setSearchText] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -87,16 +87,19 @@ export default function HomeScreen() {
   
   const dispatch = useDispatch();
   
-  // Get date range from Redux
+  // Get date range and location from Redux
   const { date, startDate, endDate } = useSelector((state: RootState) => state.date);
+  const { latitude, longitude, city, radius } = useSelector((state: RootState) => state.location);
 
   useEffect(() => {
     const fetchLocation = async () => {
-      const location = await LocationService.getCurrentLocation();
-      setCurrentLocation(location?.city?.toUpperCase() || 'LOCATION UNAVAILABLE');
+      const locationData = await LocationService.getCurrentLocation();
+      if (locationData) {
+        dispatch(setLocation({ latitude: locationData.latitude, longitude: locationData.longitude, city: locationData.city }));
+      }
     };
     fetchLocation();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -136,21 +139,15 @@ export default function HomeScreen() {
   const handleSearch = () => {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
-      location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      dateRange: { startDate, endDate },
     });
   };
 
   // Handle category selection
   const handleCategoryPress = (category: Category) => {
     navigation.navigate('SearchResults', {
-      searchQuery: category.name,
-      location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      categoryId: category._id,
+      dateRange: { startDate, endDate },
     });
   };
 
@@ -158,10 +155,7 @@ export default function HomeScreen() {
   const handleSearchBarPress = () => {
     navigation.navigate('SearchResults', {
       searchQuery: searchText,
-      location: currentLocation,
-      date: date,
-      startDate: startDate,
-      endDate: endDate,
+      dateRange: { startDate, endDate },
     });
   };
 
@@ -186,7 +180,7 @@ export default function HomeScreen() {
             <View style={styles.headerTop}>
               <View style={styles.locationWrapper}>
                 <View style={styles.locationInfo}>
-                  <Text style={styles.locationText}>{currentLocation}</Text>
+                  <Text style={styles.locationText}>{city?.toUpperCase() || 'LOCATION UNAVAILABLE'}</Text>
                   <Ionicons name="location" size={16} color="white" style={styles.locationIcon} />
                 </View>
               </View>
@@ -205,7 +199,15 @@ export default function HomeScreen() {
             <Ionicons name="search" size={20} color="#94a3b8" />
             <TextInput
               value={searchText}
-              onChangeText={setSearchText}
+              onChangeText={(text) => {
+                setSearchText(text);
+                if (text.length > 0) {
+                  navigation.navigate('SearchResults', {
+                    searchQuery: text,
+                    dateRange: { startDate, endDate },
+                  });
+                }
+              }}
               placeholder=" "
               placeholderTextColor="#94a3b8"
               style={styles.searchInput}

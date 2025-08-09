@@ -13,6 +13,7 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
@@ -22,56 +23,32 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { setLocation, setRadius } from '../store/slices/locationSlice';
 import categoryIcons from '../utils/icons';
+import ListingService, { Listing } from '../services/ListingService'; // Import ListingService and Listing type
+import SearchListingCard from '../components/SearchListingCard'; // Assuming you have a ListingCard component
 
 const { width: screenWidth } = Dimensions.get('window');
 
 interface RouteParams {
-  searchQuery: string;
-  location: string;
+  searchQuery?: string;
   dateRange?: {
     startDate: string | null;
     endDate: string | null;
   };
+  categoryId?: string;
+  subCategoryId?: string;
 }
-
-interface SearchCategory {
-  id: string;
-  name: string;
-  icon: string;
-  count?: number;
-  type: 'category' | 'listing';
-}
-
-// Mock data - replace with API data later
-const popularCategories: SearchCategory[] = [
-  { id: '1', name: 'Farm Machinery', icon: 'tractor', count: 245, type: 'category' },
-  { id: '2', name: 'Tools & Equipment', icon: 'tools', count: 189, type: 'category' },
-  { id: '3', name: 'Farm Workers', icon: 'farmer', count: 342, type: 'category' },
-  { id: '4', name: 'Transport Services', icon: 'transport', count: 156, type: 'category' },
-  { id: '5', name: 'Storage Solutions', icon: 'storage', count: 78, type: 'category' },
-  { id: '6', name: 'Irrigation Systems', icon: 'drip', count: 92, type: 'category' },
-  { id: '7', name: 'Seeds & Fertilizers', icon: 'grain', count: 267, type: 'category' },
-  { id: '8', name: 'Dairy Products', icon: 'dairy', count: 134, type: 'category' },
-];
-
-const recentSearches = [
-  'Tractor rental near me',
-  'Harvest workers',
-  'Cold storage facilities',
-  'Organic fertilizers',
-];
 
 const SearchResultsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { searchQuery, location, dateRange } = route.params as RouteParams;
+  const { searchQuery, dateRange, categoryId, subCategoryId } = route.params as RouteParams;
   
   const [search, setSearch] = useState(searchQuery || '');
-  const [currentLocation, setCurrentLocation] = useState(location || 'Loading...');
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
-  const [results, setResults] = useState<SearchCategory[]>([]);
+  const [results, setResults] = useState<Listing[]>([]); // Change type to Listing[]
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   
@@ -79,9 +56,10 @@ const SearchResultsScreen: React.FC = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   
-  // Get date range from Redux if not passed
-  const reduxDateRange = useSelector((state: RootState) => state.dateRange);
+  // Get date range and location from Redux
+  const reduxDateRange = useSelector((state: RootState) => state.date);
   const activeDateRange = dateRange || reduxDateRange;
+  const { latitude, longitude, city, radius } = useSelector((state: RootState) => state.location);
 
   useEffect(() => {
     // Entrance animation
@@ -99,36 +77,46 @@ const SearchResultsScreen: React.FC = () => {
       }),
     ]).start();
     
+    console.log('SearchResultsScreen: route.params:', route.params); // Log incoming params
     // Perform initial search
     performSearch();
-  }, []);
-
-  useEffect(() => {
-    if (search.length >= 3) {
-      performSearch();
-    }
-  }, [search]);
+  }, [search, activeDateRange, categoryId, subCategoryId, latitude, longitude, radius]); // Add dependencies
 
   const performSearch = async () => {
     setLoading(true);
-    // Simulate API call - replace with actual API
-    setTimeout(() => {
-      // Filter results based on search query
-      const filtered = popularCategories.filter(cat =>
-        cat.name.toLowerCase().includes(search.toLowerCase())
-      );
-      setResults(filtered.length > 0 ? filtered : popularCategories);
+    try {
+      const params: any = {};
+      if (search) params.text = search;
+      if (categoryId) params.categoryId = categoryId;
+      if (subCategoryId) params.subCategoryId = subCategoryId;
+      
+      // Use coordinates from Redux if available
+      if (latitude && longitude && radius) {
+        params.latitude = latitude;
+        params.longitude = longitude;
+        params.radius = radius;
+      } else if (city && city !== 'Loading...') { // Fallback to city string if coordinates are not available
+        params.location = city;
+      }
+
+      if (activeDateRange?.startDate) params.date = activeDateRange.startDate; // Assuming search by start date
+
+      console.log('SearchResultsScreen: Calling searchListings with params:', params); // Log outgoing params
+      const fetchedListings = await ListingService.searchListings(params);
+      setResults(fetchedListings);
+      console.log('SearchResultsScreen: Results state updated with:', fetchedListings); // Log updated results
+    } catch (error: any) {
+      console.error('Error performing search:', error);
+      Alert.alert('Error', 'Failed to perform search. Please try again.');
+      setResults([]); // Clear results on error
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
-  const handleCategoryPress = (category: SearchCategory) => {
-    // Navigate to category listings
-    navigation.navigate('CategoryBrowser', { 
-      selectedCategoryId: category.id,
-      searchQuery: search,
-      dateRange: activeDateRange,
-    });
+  const handleCategoryPress = (listing: Listing) => { // Change parameter type to Listing
+    // Navigate to listing detail screen
+    navigation.navigate('ListingDetail', { listingId: listing._id });
   };
 
   const handleLocationPress = () => {
@@ -136,10 +124,14 @@ const SearchResultsScreen: React.FC = () => {
   };
 
   const handleLocationSelect = (newLocation: string) => {
-    setCurrentLocation(newLocation);
+    // This function might need to be updated to dispatch setLocation to Redux
+    // For now, it just updates local state and triggers a search
+    // If you want to update Redux, you'd dispatch setLocation here
+    // dispatch(setLocation({ latitude: newLat, longitude: newLon, city: newLocation }));
+    // For now, we'll just update the local state for the modal display
+    // and rely on Redux for the actual search params.
+    // setCurrentLocation(newLocation); // This state is no longer used for search params
     setShowLocationModal(false);
-    // Refresh search with new location
-    performSearch();
   };
 
   const formatDateRange = () => {
@@ -157,44 +149,33 @@ const SearchResultsScreen: React.FC = () => {
     return `${start} - ${end}`;
   };
 
-  const renderCategoryItem = ({ item }: { item: SearchCategory }) => (
+  const renderListingItem = ({ item }: { item: Listing }) => ( // Change render item to Listing
     <Animated.View
       style={{
         opacity: fadeAnim,
         transform: [{ translateY: slideAnim }],
+        width: (screenWidth - SPACING.MD * 3) / 2, // Calculate width for two columns
+        marginBottom: SPACING.MD, // Add margin bottom for spacing between rows
+        marginHorizontal: SPACING.XS, // Add horizontal margin for spacing between columns
       }}
     >
-      <TouchableOpacity
-        style={styles.categoryCard}
-        onPress={() => handleCategoryPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.categoryIconWrapper}>
-          <Image
-            source={categoryIcons[item.icon] || categoryIcons['tools']}
-            style={styles.categoryIcon}
-          />
-        </View>
-        <Text style={styles.categoryName} numberOfLines={2}>
-          {item.name}
-        </Text>
-        {item.count && (
-          <Text style={styles.categoryCount}>
-            {item.count} listings
-          </Text>
-        )}
-      </TouchableOpacity>
+      <SearchListingCard 
+        listing={item} 
+        onPress={() => handleCategoryPress(item)} // Pass listing to handleCategoryPress
+      />
     </Animated.View>
   );
 
   const renderHeader = () => (
     <View style={styles.headerSection}>
-      {/* Recent Searches */}
-      {search.length < 3 && recentSearches.length > 0 && (
+      {/* Recent Searches - Keep if still relevant, otherwise remove */}
+      {search.length < 3 && (
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>Recent Searches</Text>
           <View style={styles.recentTags}>
-            {recentSearches.map((item, index) => (
+            {/* You might want to store and display actual recent searches */}
+            {/* For now, keeping mock data or removing if not needed */}
+            {['Tractor rental near me', 'Harvest workers'].map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.recentTag}
@@ -211,9 +192,11 @@ const SearchResultsScreen: React.FC = () => {
       {/* Section Title */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {search.length >= 3 ? 'Search Results' : 'Popular Categories'}
+          {search.length >= 3 || categoryId || (latitude && longitude) ? 'Search Results' : 'Popular Listings'}
         </Text>
-        {search.length >= 3 && (
+        {loading ? (
+          <ActivityIndicator size="small" color={COLORS.PRIMARY.MAIN} />
+        ) : (
           <Text style={styles.resultCount}>
             {results.length} results found
           </Text>
@@ -265,14 +248,14 @@ const SearchResultsScreen: React.FC = () => {
               <Text style={styles.locationItemText}>Use Current Location</Text>
             </TouchableOpacity>
             
-            {['Hyderabad', 'Bangalore', 'Chennai', 'Mumbai', 'Delhi', 'Pune', 'Kolkata'].map((city) => (
+            {['Hyderabad', 'Bangalore', 'Chennai', 'Mumbai', 'Delhi', 'Pune', 'Kolkata'].map((locCity) => (
               <TouchableOpacity
-                key={city}
+                key={locCity}
                 style={styles.locationItem}
-                onPress={() => handleLocationSelect(city)}
+                onPress={() => handleLocationSelect(locCity)}
               >
                 <Ionicons name="location-outline" size={20} color={COLORS.TEXT.SECONDARY} />
-                <Text style={styles.locationItemText}>{city}</Text>
+                <Text style={styles.locationItemText}>{locCity}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -297,11 +280,12 @@ const SearchResultsScreen: React.FC = () => {
             <Ionicons name="search" size={20} color={COLORS.TEXT.SECONDARY} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Find Serivces or Listings"
+              placeholder="Find Services or Listings"
               placeholderTextColor={COLORS.TEXT.SECONDARY}
               value={search}
               onChangeText={setSearch}
               autoFocus={false}
+              onSubmitEditing={performSearch} // Trigger search on submit
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')}>
@@ -318,7 +302,7 @@ const SearchResultsScreen: React.FC = () => {
           activeOpacity={0.7}
         >
           <Ionicons name="location-outline" size={20} color={COLORS.TEXT.SECONDARY} />
-          <Text style={styles.locationText}>{currentLocation}</Text>
+          <Text style={styles.locationText}>{city?.toUpperCase() || 'LOCATION UNAVAILABLE'}</Text>
           <Ionicons name="chevron-down" size={20} color={COLORS.TEXT.SECONDARY} />
         </TouchableOpacity>
         
@@ -333,7 +317,7 @@ const SearchResultsScreen: React.FC = () => {
         )}
         
         {/* Results */}
-        {loading ? (
+        {loading && results.length === 0 ? ( // Show loading only if no results yet
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.PRIMARY.MAIN} />
             <Text style={styles.loadingText}>Searching...</Text>
@@ -341,13 +325,18 @@ const SearchResultsScreen: React.FC = () => {
         ) : (
           <FlatList
             data={results}
-            renderItem={renderCategoryItem}
-            keyExtractor={(item) => item.id}
+            renderItem={renderListingItem} // Change render item to Listing
+            keyExtractor={(item) => item._id} // Use _id for key
             numColumns={2}
             columnWrapperStyle={styles.row}
             contentContainerStyle={styles.gridContainer}
             ListHeaderComponent={renderHeader}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={!loading ? ( // Show "No results" only if not loading and no results
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No listings found for your search criteria.</Text>
+              </View>
+            ) : null}
           />
         )}
         
@@ -475,41 +464,8 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
   },
-  categoryCard: {
-    width: (screenWidth - SPACING.MD * 3) / 2,
-    backgroundColor: COLORS.NEUTRAL.WHITE,
-    borderRadius: BORDER_RADIUS.LG,
-    padding: SPACING.MD,
-    marginBottom: SPACING.MD,
-    alignItems: 'center',
-    ...SHADOWS.SM,
-  },
-  categoryIconWrapper: {
-    width: 64,
-    height: 64,
-    backgroundColor: COLORS.BACKGROUND.CARD,
-    borderRadius: BORDER_RADIUS.MD,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.SM,
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-  categoryName: {
-    fontSize: FONT_SIZES.SM,
-    fontFamily: FONTS.POPPINS.MEDIUM,
-    color: COLORS.TEXT.PRIMARY,
-    textAlign: 'center',
-    marginBottom: SPACING.XS,
-  },
-  categoryCount: {
-    fontSize: FONT_SIZES.XS,
-    fontFamily: FONTS.POPPINS.REGULAR,
-    color: COLORS.TEXT.SECONDARY,
-  },
+  // Removed categoryCard, categoryIconWrapper, categoryIcon, categoryName, categoryCount
+  // as they are now handled by ListingCard
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -520,6 +476,18 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.BASE,
     fontFamily: FONTS.POPPINS.REGULAR,
     color: COLORS.TEXT.SECONDARY,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING['4XL'],
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: FONTS.POPPINS.MEDIUM,
+    color: COLORS.TEXT.SECONDARY,
+    textAlign: 'center',
   },
   // Modal styles
   modalOverlay: {

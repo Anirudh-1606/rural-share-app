@@ -28,6 +28,7 @@ const ListingDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isToggling, setIsToggling] = useState(false);
 
   const fetchListingDetail = useCallback(async () => {
     try {
@@ -84,6 +85,33 @@ const ListingDetailScreen = () => {
     navigation.navigate('CreateListing', { listingId: listing?._id });
   };
 
+  const handleToggleStatus = async () => {
+    if (!listing || !token || isToggling) return;
+    
+    try {
+      setIsToggling(true);
+      setShowMenu(false);
+      
+      const newStatus = !listing.isActive;
+      await ListingService.toggleListingStatus(listing._id, newStatus, token);
+      
+      // Update the local state
+      setListing(prevListing => 
+        prevListing ? { ...prevListing, isActive: newStatus } : null
+      );
+      
+      Alert.alert(
+        'Success', 
+        `Listing has been ${newStatus ? 'activated' : 'deactivated'} successfully.`
+      );
+    } catch (error) {
+      console.error('Error toggling listing status:', error);
+      Alert.alert('Error', 'Failed to update listing status. Please try again.');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   const getUnitLabel = (unit: string) => {
     const unitLabels: { [key: string]: string } = {
         per_hour: '/hr',
@@ -125,6 +153,25 @@ const ListingDetailScreen = () => {
             <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
               <Ionicons name="create-outline" size={18} color={COLORS.TEXT.PRIMARY} />
               <Text style={styles.menuText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.menuItem, isToggling && styles.menuItemDisabled]} 
+              onPress={handleToggleStatus}
+              disabled={isToggling}
+            >
+              <Ionicons 
+                name={listing?.isActive ? "pause-outline" : "play-outline"} 
+                size={18} 
+                color={listing?.isActive ? "#F59E0B" : COLORS.SUCCESS.MAIN} 
+              />
+              <Text style={[styles.menuText, { 
+                color: listing?.isActive ? "#F59E0B" : COLORS.SUCCESS.MAIN 
+              }]}>
+                {isToggling 
+                  ? 'Processing...' 
+                  : (listing?.isActive ? 'Deactivate' : 'Activate')
+                }
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
               <Ionicons name="trash-outline" size={18} color="#EF4444" />
@@ -178,6 +225,16 @@ const ListingDetailScreen = () => {
             <Text style={styles.noImageText}>No images available</Text>
           </View>
         )}
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageGallery}
+        >
+          {listing.photos.map((photo, index) => (
+            <Image key={index} source={{ uri: typeof photo === 'string' ? photo : photo.uri }} style={styles.listingImage} />
+          ))}
+        </ScrollView>
 
         <View style={styles.section}>
           <Text variant="h4" weight="bold" style={styles.title}>
@@ -307,6 +364,9 @@ const styles = StyleSheet.create({
         marginLeft: SPACING.SM,
         fontSize: 14,
         fontFamily: FONTS.POPPINS.MEDIUM,
+      },
+      menuItemDisabled: {
+        opacity: 0.5,
       },
       scrollContent: {
         paddingBottom: 100,
