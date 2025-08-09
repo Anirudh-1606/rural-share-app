@@ -85,6 +85,13 @@ const ProviderScreen = () => {
 
   const onRefresh = () => fetchDashboard(true);
 
+  // Refresh when returning from Create Listing or any navigation back
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => fetchDashboard());
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, user?.id, token]);
+
   return (
     <SafeAreaWrapper backgroundColor="#f5f5f5" style={styles.flex}>
       {/* Background Image */}

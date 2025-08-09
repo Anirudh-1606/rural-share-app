@@ -38,6 +38,16 @@ const MyListingsScreen = () => {
     }
   }, [user?.id]);
 
+  // Refresh listings whenever returning to this screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (user?.id) {
+        fetchListings();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, user?.id]);
+
   const fetchListings = async () => {
     try {
       setLoading(true);
