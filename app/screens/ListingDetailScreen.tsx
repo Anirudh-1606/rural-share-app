@@ -185,7 +185,7 @@ const ListingDetailScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {listing.photos && listing.photos.length > 0 ? (
+        {listing.photoUrls && listing.photoUrls.length > 0 ? (
           <View style={styles.imageGalleryContainer}>
             <ScrollView
               horizontal
@@ -197,7 +197,7 @@ const ListingDetailScreen = () => {
                 setCurrentImageIndex(index);
               }}
             >
-              {listing.photos.map((photo, index) => (
+              {listing.photoUrls.map((photo, index) => (
                 <Image 
                   key={index} 
                   source={{ uri: typeof photo === 'string' ? photo : photo.uri }} 
@@ -205,9 +205,9 @@ const ListingDetailScreen = () => {
                 />
               ))}
             </ScrollView>
-            {listing.photos.length > 1 && (
+            {listing.photoUrls.length > 1 && (
               <View style={styles.paginationContainer}>
-                {listing.photos.map((_, index) => (
+                {listing.photoUrls.map((_, index) => (
                   <View
                     key={index}
                     style={[
@@ -225,16 +225,7 @@ const ListingDetailScreen = () => {
             <Text style={styles.noImageText}>No images available</Text>
           </View>
         )}
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.imageGallery}
-        >
-          {listing.photos.map((photo, index) => (
-            <Image key={index} source={{ uri: typeof photo === 'string' ? photo : photo.uri }} style={styles.listingImage} />
-          ))}
-        </ScrollView>
+       
 
         <View style={styles.section}>
           <Text variant="h4" weight="bold" style={styles.title}>
