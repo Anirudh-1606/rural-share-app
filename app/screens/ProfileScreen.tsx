@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Switch,
   Image,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
@@ -20,6 +21,9 @@ import Button from '../components/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { logout } from '../store/slices/authSlice';
+import ProviderService, { ProviderPreferencesPayload } from '../services/ProviderService';
+import { useEffect } from 'react';
+import UserService, { UserProfile } from '../services/UserService';
 
 type ProfileSectionItem = {
   icon: string;
@@ -42,13 +46,61 @@ const ProfileScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileImage, setProfileImage] = useState<ImagePickerResult | null>(null);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'te' | 'hi'>('en');
+  const [defaultProviderTab, setDefaultProviderTab] = useState<'active' | 'inactive' | 'all'>('active');
+  const [fetchedUser, setFetchedUser] = useState<UserProfile | null>(null);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const { user } = useSelector((state: RootState) => state.auth);
   const insets = useSafeAreaInsets();
 
+  // Fetch fresh user profile on mount to reflect latest server data
+  const refreshUser = async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!user?.id) return;
+      const result = await UserService.getUserById(user.id, token || undefined);
+      setFetchedUser(result);
+    } catch (e) {
+      // Non-blocking
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const onRefresh = () => refreshUser(true);
+
   const handleTabPreferenceChange = async (tab: 'seeker' | 'provider') => {
     setDefaultTab(tab);
     await AsyncStorage.setItem('defaultTab', tab);
+    await persistPreferences({ defaultLandingPage: tab });
+  };
+
+  const persistPreferences = async (partial: Partial<ProviderPreferencesPayload>) => {
+    try {
+      const token = (await AsyncStorage.getItem('token')) || undefined;
+      const existing = {
+        defaultLandingPage: defaultTab,
+        defaultProviderTab,
+        preferredLanguage,
+        notificationsEnabled,
+      };
+      const payload: ProviderPreferencesPayload = { ...existing, ...partial };
+      await ProviderService.updatePreferences(payload, token);
+    } catch (e) {
+      console.log('Failed to update preferences', e);
+    }
+  };
+
+  const onToggleNotifications = async (value: boolean) => {
+    setNotificationsEnabled(value);
+    await persistPreferences({ notificationsEnabled: value });
   };
 
   const openAvatarPicker = async () => {
@@ -61,33 +113,64 @@ const ProfileScreen = () => {
     );
   };
 
+  const languages: Array<{ code: 'en' | 'te' | 'hi'; label: string }> = [
+    { code: 'en', label: 'English' },
+    { code: 'te', label: 'తెలుగు' },
+    { code: 'hi', label: 'हिंदी' },
+  ];
+
+  const languageLabel = languages.find(l => l.code === preferredLanguage)?.label || 'English';
+
+  const cycleLanguage = async () => {
+    const idx = languages.findIndex(l => l.code === preferredLanguage);
+    const next = languages[(idx + 1) % languages.length].code;
+    setPreferredLanguage(next);
+    await persistPreferences({ preferredLanguage: next });
+  };
+
+  const providerTabs: Array<{ key: 'active' | 'inactive' | 'all'; label: string }> = [
+    { key: 'active', label: 'Active' },
+    { key: 'inactive', label: 'Inactive' },
+    { key: 'all', label: 'All' },
+  ];
+
+  const providerTabLabel = providerTabs.find(t => t.key === defaultProviderTab)?.label || 'Active';
+
+  const cycleProviderTab = async () => {
+    const idx = providerTabs.findIndex(t => t.key === defaultProviderTab);
+    const next = providerTabs[(idx + 1) % providerTabs.length].key;
+    setDefaultProviderTab(next);
+    await persistPreferences({ defaultProviderTab: next });
+  };
+
   const profileSections: ProfileSection[] = [
     {
       title: 'Account Settings',
       items: [
         { icon: 'person-outline', label: 'Edit Profile', onPress: () => {} },
-        { icon: 'call-outline', label: 'Phone Number', value: user?.phone || 'N/A' },
-        { icon: 'mail-outline', label: 'Email', value: user?.email || 'N/A' },
+        { icon: 'call-outline', label: 'Phone Number', value: (fetchedUser?.phone || user?.phone) || 'N/A' },
+        { icon: 'mail-outline', label: 'Email', value: (fetchedUser?.email || user?.email) || 'N/A' },
         { icon: 'location-outline', label: 'Address', onPress: () => {} },
       ],
     },
     {
       title: 'Preferences',
       items: [
-        { icon: 'language-outline', label: 'Language', value: 'English', onPress: () => {} },
+        { icon: 'language-outline', label: 'Language', value: languageLabel, onPress: cycleLanguage },
+        { icon: 'albums-outline', label: 'Default Provider Tab', value: providerTabLabel, onPress: cycleProviderTab },
         {
           icon: 'notifications-outline',
           label: 'Notifications',
           toggle: true,
           toggleValue: notificationsEnabled,
-          onToggle: setNotificationsEnabled,
+           onToggle: onToggleNotifications,
         },
         {
           icon: 'moon-outline',
           label: 'Dark Mode',
           toggle: true,
           toggleValue: darkModeEnabled,
-          onToggle: setDarkModeEnabled,
+           onToggle: setDarkModeEnabled,
         },
       ],
     },
@@ -104,7 +187,17 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.PRIMARY.MAIN]}
+          />
+        }
+      >
         {/* Gradient Header */}
         <LinearGradient
           colors={[COLORS.PRIMARY.MAIN, COLORS.PRIMARY.DARK]}
@@ -328,7 +421,7 @@ const ProfileScreen = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* App Version */}
+         {/* App Version */}
         <Text style={styles.version}>
           Version 1.0.0
         </Text>

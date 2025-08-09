@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   Platform,
   Image,
+  RefreshControl,
 } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
+import { COLORS, SHADOWS, FONTS, FONT_SIZES } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -23,8 +24,7 @@ const ProviderScreen = () => {
   const navigation = useNavigation<any>();
   const { user, token } = useSelector((state: RootState) => state.auth);
   const [dashboard, setDashboard] = useState<ProviderDashboardResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -61,36 +61,32 @@ const ProviderScreen = () => {
     ];
   }, [dashboard]);
 
-  const quickActions = [
-    { label: 'Add New', icon: 'add-circle-outline' },
-    { label: 'My Listings', icon: 'document-text-outline' },
-    { label: 'Bookings', icon: 'checkmark-done-outline' },
-    { label: 'Analytics', icon: 'bar-chart-outline' },
-  ];
+  // quickActions placeholder removed (inline JSX is used)
 
+
+  const fetchDashboard = async (isRefresh = false) => {
+    if (!user?.id) {
+      if (isRefresh) setRefreshing(false);
+      return;
+    }
+    try {
+      if (isRefresh) setRefreshing(true);
+      const data = await ProviderService.getDashboard(user.id, token || undefined);
+      setDashboard(data);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await ProviderService.getDashboard(user.id, token || undefined);
-        setDashboard(data);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to fetch dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, token]);
 
+  const onRefresh = () => fetchDashboard(true);
+
   return (
-    <SafeAreaWrapper backgroundColor="#f5f5f5" style={{ flex: 1}}>
+    <SafeAreaWrapper backgroundColor="#f5f5f5" style={styles.flex}>
       {/* Background Image */}
       <Image 
         source={backgroundImg} 
@@ -102,6 +98,13 @@ const ProviderScreen = () => {
         contentContainerStyle={styles.container} 
         showsVerticalScrollIndicator={false}
         bounces={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.PRIMARY.MAIN]}
+          />
+        }
       >
         {/* Header with Gradient Background */}
         <View style={styles.headerContainer}>
@@ -239,13 +242,14 @@ const ProviderScreen = () => {
         </View>
 
         {/* Bottom Padding */}
-        <View style={{ height: 100 }} />
+        <View style={styles.bottomPad} />
       </ScrollView>
     </SafeAreaWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: {
     flexGrow: 1,
     backgroundColor: 'transparent', // Changed to transparent
@@ -494,6 +498,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.POPPINS.REGULAR,
     color: '#6B7280',
     marginLeft: 6,
+  },
+  bottomPad: {
+    height: 100,
   },
 });
 

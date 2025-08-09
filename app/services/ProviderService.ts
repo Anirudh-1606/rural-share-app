@@ -30,6 +30,13 @@ export interface ProviderDashboardResponse {
   recentBookings: ProviderRecentBooking[];
 }
 
+export interface ProviderPreferencesPayload {
+  defaultLandingPage: 'seeker' | 'provider';
+  defaultProviderTab: 'active' | 'inactive' | 'all';
+  preferredLanguage: string; // e.g., 'en', 'te'
+  notificationsEnabled: boolean;
+}
+
 class ProviderService {
   private getAuthHeaders(token?: string) {
     return token
@@ -52,6 +59,23 @@ class ProviderService {
     } catch (error: any) {
       console.error('ProviderService.getDashboard error:', error?.response?.data || error?.message);
       throw new Error(error?.response?.data?.message || 'Failed to fetch provider dashboard');
+    }
+  }
+
+  async updatePreferences(
+    preferences: ProviderPreferencesPayload,
+    token?: string
+  ): Promise<ProviderPreferencesPayload> {
+    try {
+      const response = await axios.patch(
+        `${BASE_URL}/providers/preferences`,
+        preferences,
+        this.getAuthHeaders(token)
+      );
+      return response.data as ProviderPreferencesPayload;
+    } catch (error: any) {
+      console.error('ProviderService.updatePreferences error:', error?.response?.data || error?.message);
+      throw new Error(error?.response?.data?.message || 'Failed to update provider preferences');
     }
   }
 }
