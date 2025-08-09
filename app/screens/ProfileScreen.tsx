@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.MD,
   },
   headerTitle: {
-    fontSize: FONT_SIZES['2XL'],
+    fontSize: FONT_SIZES['XL'],
     fontFamily: FONTS.POPPINS.SEMIBOLD,
   },
   headerSubtitle: {
@@ -474,6 +474,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.SM,
     fontFamily: FONTS.POPPINS.REGULAR,
     opacity: 0.9,
+    fontWeight: '500',
   },
   headerIconButton: {
     width: 36,

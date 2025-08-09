@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import Text from '../components/Text';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../utils';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -30,8 +30,8 @@ const dummyNotifications: NotificationItem[] = [
 ];
 
 const NotificationsScreen = () => {
-  const navigation = useNavigation<any>();
-  const [items, setItems] = useState<NotificationItem[]>(dummyNotifications);
+  useNavigation<any>();
+  const [items] = useState<NotificationItem[]>(dummyNotifications);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = () => {
@@ -43,18 +43,17 @@ const NotificationsScreen = () => {
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
       {/* Header */}
       <View style={styles.header}>
-
-        <Text variant="h4" weight="semibold" style={styles.headerTitle}>
+        <Text variant="body" weight="semibold" style={styles.headerTitle}>
           Notifications
         </Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       {/* List */}
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={64} color={COLORS.TEXT.SECONDARY} />
-          <Text variant="h4" weight="semibold" style={styles.emptyTitle}>No notifications</Text>
+          <Ionicons name="notifications-off-outline" size={48} color={COLORS.TEXT.SECONDARY} />
+          <Text variant="body" weight="semibold" style={styles.emptyTitle}>No notifications</Text>
           <Text variant="body" color={COLORS.TEXT.SECONDARY} align="center" style={styles.emptyText}>
             You will see new notifications here as they arrive.
           </Text>
@@ -70,7 +69,7 @@ const NotificationsScreen = () => {
               <View style={styles.cardIcon}> 
                 <Ionicons name="notifications-outline" size={20} color={COLORS.PRIMARY.MAIN} />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flex}>
                 <Text variant="body" weight="semibold" style={styles.cardTitle}>{n.title}</Text>
                 <Text variant="caption" color={COLORS.TEXT.SECONDARY}>{n.body}</Text>
               </View>
@@ -103,10 +102,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
     color: COLORS.TEXT.PRIMARY,
   },
+  headerSpacer: { width: 40 },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -145,6 +143,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     marginBottom: 2,
   },
+  flex: { flex: 1 },
 });
 
 export default NotificationsScreen;

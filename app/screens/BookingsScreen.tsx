@@ -20,9 +20,7 @@ const BookingsScreen = () => {
     <SafeAreaWrapper backgroundColor={COLORS.BACKGROUND.PRIMARY}>
       {/* Header */}
       <View style={styles.header}>
-      <Text variant="h4" weight="semibold" style={styles.headerTitle}>
-          Bookings
-        </Text>
+        <Text variant="body" weight="semibold" style={styles.headerTitle}>Bookings</Text>
         <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('Provider')}> 
           <Ionicons name="briefcase-outline" size={20} color={COLORS.PRIMARY.MAIN} />
         </TouchableOpacity>
@@ -36,10 +34,10 @@ const BookingsScreen = () => {
       >
         <View style={styles.card}>
           <View style={styles.iconBadge}>
-            <Ionicons name="calendar-outline" size={22} color={COLORS.PRIMARY.MAIN} />
+            <Ionicons name="calendar-outline" size={18} color={COLORS.PRIMARY.MAIN} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="body" weight="semibold">No bookings yet</Text>
+          <View style={styles.flex}>
+            <Text variant="caption" weight="semibold">No bookings yet</Text>
             <Text variant="caption" color={COLORS.TEXT.SECONDARY}>Your recent bookings will appear here.</Text>
           </View>
         </View>
@@ -91,6 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  flex: { flex: 1 },
 });
 
 export default BookingsScreen;
